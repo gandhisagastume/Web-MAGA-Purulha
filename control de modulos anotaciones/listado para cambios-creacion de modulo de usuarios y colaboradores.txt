@@ -1,0 +1,167 @@
+un administrador también tiene que tener un puesto en la oficina | LISTO
+
+
+que crear se abra en una ventana como editar | LISTO
+
+
+borrar todos los usuarios con comandos sql
+
+
+las credenciales administrador que si sean las correctas | LISTO 
+
+
+control de datos, si solo letras, números, numero de caracteres | LISTO
+
+
+que el formulario tenga letras blancas si el fondo es oscuro | LISTO
+
+
+el puesto que tenga en colaborador también este en usuario y viceversa | LISTO 
+
+
+cambiar svg de botones	 | LISTO
+
+
+contraseñas fuertes, almenos un numero  | LISTO
+ojo para ver la contraseña		| LISTO 
+
+
+
+
+CREAR NUEVO
+
+vista de usuario personal (ósea la vista de el usuario que esta logueado)
+que esto se conecte al botón de "mi perfil"
+mostrar info del perfil
+
+leer de la base de dato
+
+editar campos de:
+
+nombre de usuario
+nombre Completo
+correo
+teléfono
+nombre
+contraseña (mandar a formulario de recuperación de contraseña, notificación de alerta)
+descripción 
+
+no editar campos de:
+
+fecha de creación de la cuenta
+ROL (administrador/colaborador)
+dpi
+puesto (si esta vinculado a un colaborador)
+estado (activo/desactivado)
+
+
+apartado de configuración 
+
+Enviar Notificaciones (que muestre la pregunta del navegador si desea que se envie notificaciones)
+
+botón de enviar a información de perfil
+
+preguntas frecuentes (enviar a nuevo HTML donde estará el manual de usuario de texto)
+
+términos y condiciones???
+ley de acceso a la información publica???
+modo claro/oscuro ??????
+enviar comentarios ()
+
+mostrar información de nosotros los creadores. 
+
+
+---------------------------------------------------------------------------------------------------------------------
+
+bueno ahoar vamos a crear un nuevo archivo HTML el cual será : configeneral.html
+
+aquí como su nombre lo dice será para configuraciones. este HTML tendrá su propio js y su propio css créalos en las rutas correctas donde deberían de ir.
+
+
+este apartado será mas de visualización de algunos datos ya predefinidos y de configurar cosas de la pagina.
+por lo que debe estar accesible a todos los usuarios.
+
+para esto primero hay que modificar el @base.html en el apartado del menú que despliega el svg de usuario.
+el cambio es CUANDO NADIE ESTA LOGUEADO, si no estamos logueados lo que debería hacer es que tiene que mostrar el botón de "configuración "
+
+arriba del botón de iniciar sesión
+
+
+si estamos logueados este botón ya existe.
+
+
+el botón de configuración nos tiene que redirigir a este nuevo HTML que estamos creando
+
+
+bien que debe de llevar este HTML.
+como te dije antes este HTML es mas para visualización y configuración de la pagina.
+
+
+debe de llevar:
+
+
+boton de Permitir que la pagina envie notificaciones (que muestre la pregunta del navegador si desea que se envie notificaciones)
+
+botón de configurar perfil (enviar a información de perfil que creamos anteriormente)
+
+modo claro/oscuro (solo pon el botón con el switch pero no le des utilidad aun)
+
+boton de preguntas frecuentes (enviar a nuevo HTML donde estará el manual de usuario de texto)
+
+todos estos botones acompañalos con un poco de texto para enriquecer y guiar un poco al usuario
+-----------------
+apartado de Asistencia Tecnica
+
+enviar comentarios/reportar problema (abrir un formulario en donde tenga el apartado para enviar información (por ahora solo pon el formulario después crearemos la lógica para que envie datos ahora solo es la vista))
+
+------------------
+apartado de Acerca del proyecto
+
+info del curso y universidad:
+
+	proyecto final seminario 2025
+	8vo Semestre
+	Ingenieria en Ciencias y Sistemas 
+	Facultad de Ingeniería
+	Universidad San Carlos de Guatemala
+	Centro Universitario del Norte
+	Cobán A.V.
+	Guatemala
+
+info de contacto:
+	ingS4cunor@protonmail.com
+	
+
+
+ 
+-----------------
+apartado de informacion publica 
+ley de acceso a la información publica (coloca solo un poco de texto clave recuerda que es de guatemala, tambien pon un boton de descargar que despues le vamos a dar funcionalidad)
+
+términos y condiciones (informacion de derechos reservados "©2024 Todos los derechos reservados, Oficina Regional MAGA Purulhá B.V. / Km 164.5 Purulhá B.V.") (pon mas cosas que lleven las webs aqui)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

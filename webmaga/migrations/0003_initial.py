@@ -11,7 +11,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('webmaga', '0002_create_actividad_portadas'),
+        ('webmaga', '0002_db_objects'),
     ]
 
     operations = [

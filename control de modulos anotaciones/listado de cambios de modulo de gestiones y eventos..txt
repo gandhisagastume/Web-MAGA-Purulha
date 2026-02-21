@@ -1,0 +1,73 @@
+LISTOS
+
+checklist para las comunidades con un buscador para encontrar, se pueden agregar varias comunidades por proyectos. | LISTO ✓✓
+
+en el formulario de agregar beneficiarios que sea mas intuitivo, que se muestren todos los datos en una tabla para la rápida lectura, colocar un buscador, dejar botones de edición y eliminar beneficiario | LISTO ✓✓
+
+en personal a cargo crear una tabla en la base de datos de empleados para que se llame en "personal a cargo" | LISTO ✓✓
+
+colocar un apartado para diferenciar que imagen quieren en la portada del evento | LISTO ✓✓
+
+
+CAMBIOS PARA FORMULARIO DE CREAR/EDITAR EVENTO 
+
+los beneficiaros en su vista de tabla dentro de la cinta del evento colocar un buscador para buscar mas comodamente a un beneficiario. | LISTO 
+
+en crear evento poner el apartado para datos rapidos para crearlos. | LISTO 
+
+quitar latitud y longitud en el formulario de crear/editar evento, coordenadas solo sirven para las comunidades/regiones no en eventos | 
+
+LISTO
+
+agregar control de datos de entrada si son solo letras, números , total de números de dpi, teléfono | LISTO
+
+------------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------------------
+
+CAMBIOS PARA VISTA DE EVENTOS INDIVIDUALES EN proyectos.html
+
+PRIORIDAD ALTA
+
+Arreglar bug en vista de evento que recarga información de prueba que estaba anteriormente |VISTA DE EVENTO | LISTO ✓✓
+
+
+Arreglar los botones para agregar/quitar cosas en los modulos del formulario de la vista de un evento individual | VISTA DE EVENTO  | LISTO ✓✓
+	agregar personal | LISTO ✓✓
+	x para quitar personal | LISTO ✓✓
+	editar datos | LISTO ✓✓
+	agregar archivo | error al subir word
+	eliminar archivo | LISTO ✓✓
+
+tarjetas predefinidas
+
+beneficiarios que lo llame de la tabla. el total de beneficiarios
+
+
+agregar la tabla de cambios realizados a la base de datos, separando estas columnas de la tabla donde este actualmente, esto para mejorar el flujo para las notificaciones del calendario. en esta tabla de cambios llamar correctamente los COLABORADORES, y no olvidar relacionar esta tabla con la tabla de evidencias ya que directamente están conectadas en su uso real.
+ | LISTO revisar.
+
+PRIORIDAD MEDIA
+
+
+crear apartado para poner los beneficiarios, que se muestre como en una pequeña tabla con su scroll si los beneficiarios son muchos. no debe llevar un botón para poder editarlo rápidamente. | VISTA DE EVENTO SOLO LO MIRA EL ADMINISTRADOR | LISTO ✓✓
+
+
+poner una lupa en la lista total de eventos con filtros | VISTA DE EVENTO  | LISTO ✓✓
+
+
+PRIORIDAD MEDIA BAJA
+
+que en el formulario de agregar cambios en la vista de eventos individuales, despliegue de una vez el apartado para adjuntar una evidencia.(dejar la opción de agregar después para cuando se le da click al cambio realizado) | VISTA DE EVENTO | LISTO ✓✓
+
+que el botón de editar evento en la vista de un evento individual redirija directamente a la vista de editar evento directamente sin pasar por mas botones. | VISTA DE EVENTO | LISTO ✓✓
+
+en la vista de eventos individuales se muestra en responsive la X para eliminar en campos que no deberían (comunidades, cambios, archivos) | VISTA DE EVENTO | LISTO ✓✓
+
+en cambios realizados de la vista individual de un evento (proyectos.html)
+el formulario que despliega el botón de agregar cambio, que tenga la opción de que dia/fecha se hizo el cambio si no se pone ninguna fecha que tome la de ese dia por default. este cambio servirá para mostrar un cambio realizado en el calendario. 
+
+
+Arreglar responsive en vistas de agregar evento y editar evento en @gestionevento.html
+
+
+

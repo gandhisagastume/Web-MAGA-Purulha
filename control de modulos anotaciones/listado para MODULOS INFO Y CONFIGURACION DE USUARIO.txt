@@ -1,0 +1,65 @@
+hola, ahora crearemos la parte de perfil de usuario, si te das cuenta en @base.html hay un apartado para el usuario que al presionarlo conectemos con este nuevo HTML. que será: perfilusuario.html
+
+este tendrá su js y css individual.
+
+quer es lo que tendrá este HTML.
+
+pues primero y como siempre quiero que herede/use todo lo de @base.html para que tenga todo bien perfectamente
+
+bien ya el contenido de este HTML será:
+
+	Datos del usuario (si esta vinculado con un colaborador también colocar este dato y los demás datos asociados que no son redundantes)
+	cambiar mi contraseña
+	foto de perfil 
+
+
+los datos del usuario leelos de su tabla en la base de datos, la tabla se llama usuarios. si necesitas saber mas contexto de mi base de datos actual la cual es @nuevaBasedeDAtos.txt
+
+para mostrar los datos sigue una estética moderna como usan las paginas modernas en su apartado de información de usuario o "mi perfil" obvianmente sigue también la estética y los colores y fuente de la pagina.
+
+en cambiar mi contraseña es un botón que llevara a un HTML después te dire cual es la ruta por ahora solo crea el botón.
+
+en foto de perfil que tenga la opción de cambiar foto de perfil.
+
+si no eligen una foto de perfil que siga eliguiendo la letra inicial de su nombre de usuario para mostrar en el apartado de foto.
+
+
+aun no tengo una tabla para foto de perfil ni tampoco una carpeta en /media donde almacenar fotos de perfil entonces creemoslas.
+
+dame el script en texto no crees archivos dde PostgreSQL para crear esta tabla para referenciar bien la foto de perfil.
+
+
+después de la información del usuario hagamos un apartado con estadísticas del usuario estadísticas generales.
+
+Total de Proyectos Trabajados
+total de avances Realizados
+Eventos en el que trabajó
+
+estos datos son exactamente los mismos que hay en el modulo de reportes de Actividad de personal que esta en @reportes.html, asi que puedes copiar como hiciste ahí para que tenga el mismo diseño y la misma lógica y se muestre bien ahora en este nuevo HTML SIN MODIFICAR NADA DEL OTRO HTML 
+
+
+---------------------------------------------------------------------------------------------------------------------------
+
+
+
+en @index.html en el home agreguemos la vista del dashboard ejecutivo que tenemos en @reporteshtml , solo no agreguemos la tarjeta de grafico de actividades por mes, 
+en las tarjetas de datos simples quitaremos la tarjeta de actividades pendientes, ni la tarjeta de completadas este mes, ni la tarjeta de trabajadores activos.
+pondremos tarjetas de: comunidades del municipio
+
+
+tampoco agregaremos las tarjetas de top 5 comunidades mas activas, ni top 5 responsables más productivos, tampoco la de proximas actividades.
+
+ocultemos tambien el boton de generar reporte general.
+
+y cambiemos el titulo de Dashboard Ejecutico a "Estadisticas Generales de la Oficina"
+
+esta modulo en index sera visible para todos sin importar si estoy logueado o no
+
+
+
+-------------------------------------------------------------------------------------
+
+cambios madrugada de domingo. calendario funcional con notificaciones a dispositivos, modulo de configuracion de usuario y configuracion general listo, arreglo de bugs de base.html, implementacion de foto de perfil crear tabla en la base de datos, vista correcta de permisos del calendario, vista de home terminada
+
+
+

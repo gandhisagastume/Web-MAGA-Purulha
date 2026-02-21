@@ -1,0 +1,174 @@
+BACKEND CHEN:
+
+tabla de beneficiarios para vistas en el formulario
+
+en personal a cargo crear una tabla en la base de datos de empleados para que se llame en "personal a cargo"
+
+checklist para las comunidades con un buscador para encontrar, se pueden agregar varias comunidades por proyectos.
+
+diferenciar que imagen quiere una portada 
+
+en cambios realizados al darle click en alguna tarjeta que muestre información detallado
+
+en crear evento poner el apartado para datos rapidos para crearlos.
+
+en crear/editar evento poner la opción para elegir la imagen de portada.
+
+CREAR TABLA RECORDATORIOS PARA EL CALENDARIO EN LA BASE DE DATOS
+
+
+
+
+
+
+Prioridad MUY ALTA
+
+cerrar sesión en gestiones.html hará que rediriga a index SOLO SI SE CIERRA SESION EN GESTIONES.HTML | LISTO ✓✓
+
+ Módulo de reportes (vistas sin backend)
+
+	Beneficiarios
+	Eventos mensuales
+	Avances de eventos
+	Comunidades afectadas por proyectos
+
+	(Definir/validar plantilla) (en espera de respuesta de MAGA)
+
+si no estoy logueado ocultar TODOS LO BOTONES DE EDICION y apartado gestión de la cinta de opciones | falta de vista general, apartado gestión listo.
+
+si estoy logueado como colaborador ocultar apartado de gestión de la cinta de opciones botones de edición dejarlos | LISTO ✓✓
+
+
+
+Prioridad ALTA
+
+ Implementar buscador de comunidades y buscador de proyectos (con backend). 
+
+	
+	gestión de cuenta
+		nombre de usuario
+		cambios de contraseña
+		recuperación????
+		foto de perfil????
+				  
+
+	para administrador
+		gestor de usuarios del sistema (integrar boton dentro de gestiones.html)
+		creación/edición/bloqueo de usuarios
+		creación/edición/bloqueo de colaboradores
+
+
+crear modulo de usuarios, que contenga colaboradores y administradores, donde se les delegue un rol dentro de la oficina. 
+
+Prioridad MEDIA ALTA
+
+MEJORAR LOGIN | falta recuperación de contraseña
+
+	que vuelva a la pagina donde estaba si inicia sesión y no a gestiones.html obligaroriamente ✓✓
+	fondo azul para login ✓✓
+	logo de maga en el login ✓✓
+	detectar si es administrador o colaborador ✓✓
+
+
+Prioridad MEDIA
+
+
+si estoy en responsive y de comnuidades.html me quiero ir a regiones.html hay un bug de que no esta referenciado
+
+Icono/símbolo de mapa en tarjetas principales de comunidades.html. 
+
+poder eliminar imágenes, datos, archivos, comunidades afectadas, personal de cada evento individual, para esto pedir credenciales (sin backend) | REVISION
+
+ 
+Mejorar mapa general para mostrar viñetas/tooltip de regiones (sin backend). | LISTO ✓✓
+
+ Navegación de links correctos si le doy a un botón que abra la vista directa sin pasar por otros formularios o botones.
+
+ Unificar línea de diseño para formularios/credenciales/listados (sin backend). | listo ✓✓
+
+ Agregar link directo a comunidades en listados de mapa-completo.html y en el despliegue por región (probar sin backend). | esperar a que esten las paginas de comunidades
+
+ En mapa-completo.html, al oprimir una región en su menú arriba del mapa de la región poner un botón de "ver información completa" y redirigir a su vista individual | LISTO ✓✓
+
+botón de editar evento en una vista de evento individual tira error, debe llevar a su pagina individual. | REVISION 
+
+en regiones no esta cargando los png de la ubicación | REVISION 
+ 
+
+agregar control de datos de entrada si son solo letras, números , total de números de dpi, teléfono | REVISION
+
+quitar el botón de "agregar evento" en la vista de lista de todos los eventos /capacitaciones/entregas/proyectos para usuarios sin permiso
+
+
+
+cambiar de edad a fecha de nacimiento en beneficiarios individuales | listo ✓✓
+residencia poner una lista con autocompletado editable | REVISAR QUE ES
+en familia poner nombre de familia (apellidos de padres) | listo ✓✓
+en otro poner datos de encargado de asociasion, teléfono, correo, dpi | listo ✓✓
+ 
+en el reporte de cambios poner quienes trabajaron y no quien registro el cambio
+
+
+Prioridad MEDIA BAJA
+
+ En responsive, el buscador de comunidades no debe mostrar imágenes (solo en desktop) (sin backend).
+
+ Botón “Volver” en vistas de región individual que regrese a las tarjetas generales (sin backend).
+
+ Actualizar footer con información real del MAGA (sin backend).
+
+ Quitar fondo de color distinto del mapa en index.html y mapa-completo.html (sin backend).
+
+mostrar descripción de imagen al darle click de un evento, comunidad o región (sin backend) | REVISAR
+
+conectar tarjetas del home principal con los proyectos (con backend)
+
+quitar fondo azul de el icono de mapa en proyectos 
+
+en la vista de eventos individuales se muestra en responsive la X para eliminar en campos que no deberían (comunidades, cambios, archivos) | REVISION
+
+poner botón de verificación en eliminar evento. | listo ✓✓
+
+crear en vista editar/crear evento el apartado "editar tarjetas rápidas" | REVISION
+
+combobox de filtrar regiones en vista de listado de todas las regiones esta blanco y debería estar oscuro
+
+agregar evidencia del cambio directamente cuando se crea el cambio y no después(dejar la opción de agregar después) | REVISION
+
+
+
+en mapa-completo.html el icono de login esta feo no como los demás | LISTO ✓✓✓
+
+poner una lupa en la lista total de eventos con filtros | REVISION
+
+bug en mapa-completo.html en donde no se muesta la lista total de todas las comunidades que tiene una región | LISTO ✓✓
+
+en comunidades en el listado total de comunidades esta cortado y no se mira bien.
+
+en login en responsive no se ve bien la imagen del logo 
+
+aveces sucede un bug al iniciar sesión que quiere dirigir a gestioneventos.html bug raro pero molesto y confuso cuando pasa | listo ✓✓
+
+
+OPCIONAL
+
+vista administrador que muestre las gestiones de eliminar evento, generar reporte. | LISTO ✓✓ 
+
+en cambio realizado de proyecto individual que pueda adjuntar fotos o archivos, si sea adjunta fotos que se vea de buen tamaño. | Listo !!!!
+
+crear una vista de calendario en donde se ve los próximos eventos a realizar, se visualiza info general | LISTO ✓✓
+y encargados a hacer ese evento.
+
+	agregar fecha
+	editar fecha
+	eliminar fecha
+	
+permisos de usuario en el calendario
+
+admin - puede hacer todo hasta agregar un evento en el dia seleccionado | LISTO ✓✓
+
+usuario - resaltando días si esta vinculado a un colaborador.
+no puede agregar notificación para otros usuarios solo para el
+
+
+

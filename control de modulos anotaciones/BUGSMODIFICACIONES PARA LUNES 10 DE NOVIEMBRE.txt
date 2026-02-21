@@ -1,0 +1,122 @@
+BUGS/MODIFICACIONES PARA LUNES 10 DE NOVIEMBRE
+
+VISTA DE EVENTO
+	.conectar botón de crear reporte
+	-en vista de escritorio no muestrea icono de eliminar imagen
+	-que no se pueda eliminar ni editar la tarjeta de beneficiarios (simplemente que no se muestre esta tarjeta en el formulario)
+	-algunos campos se ven con fuente gris y deberían tener fuente blanca cuando el usuario esta escribiendo.
+	-en modulo de comunidades alcanzadas
+		*agregar vista y opción de fecha en donde se agrego una comunidad nueva a ese evento. (en vista de evento solo se vera, en formulario de editar evento se podrá modificar la fecha con una etiqueta individual por comunidad en el listado de comunidades)
+		*en el formulario de agregar comunidades al seleccionar una comunidad que las comunidades se guarden para asi subir todas las comunidades al darle agregar
+	-no me deja editar la descripción 
+	-gestionar los permisos de los usuarios para editar cosas, simplemente ocultar todos los botones de agregar, editar o eliminar, si el colaborador con el que esta vinculado a un usuario del sistema esta en la lista de colaboradores responsables de un evento en especifico se le muestren todos los botones de edición, agregar y eliminar, en otro caso si no esta no se va a poder ver ningún botón y el usuario solo podrá ver, no podrá editar nada. el admin siempre tendrá permisos
+
+AGREGAR CAMBIO (en vista de evento individual)
+
+	-si selecciono a dos colaboradores en un mismo cambio el sistema crea dos registros de cambios, uno para cada colaborador, es decir crea un registro por cada colaborador designado, esta mal
+debe crear solo un registro sin importar el numero de colaboradores seleccionados, poner creado por: Antonio, Miguel, Maria.
+
+
+AGREGAR BENEFICIARIO 
+	-en el formulario de crear evento, el apartado de comunidad que sea un campo con buscador que permita al usuario 	escribir y que vaya buscando automáticamente la comunidad de la lista, al seleccionar una comunidad que se 	autocomplete la región
+	-formulario arreglar colores que cuando se este escribiendo las letras estén blancas y no grises
+	-en agregar individual, familia, institución.  que no sea obligatorio el dpi, teléfono, fecha de nacimiento, correo	-beneficiarios en el buscador que puedan ser filtrados por su comunidad, su tipo
+
+
+
+CONFIGURACION DE USUARIO
+
+	-conectar botón de cambio de contraseña en configuración de usuario
+	-cambiar funcionamiento: en crear usuario del sistema, si se selecciona un colaborador para vincular, los campos que se autocompletan, cambiar a que NO SE PUEDAN EDITAR
+
+MAPA COMPLETO 
+
+	-Agregar link directo a comunidades en listados de mapa-completo.html y en el despliegue por región, y en la vista general del evento.
+
+	-el mapa esta salido en mapa.html, el contenedor sobresale de su estapcio
+
+PROYECTOS.HTML | LISTO
+
+	-quitar el botón de "agregar evento" en la vista de lista de todos los eventos /capacitaciones/entregas/proyectos, solo mostrar para administrador
+	-eliminar icono de ubicación en la tarjeta de eventos
+	-colocar filtros para ordenar por categorías o tipos en el listado de todos los eventos.
+
+
+COMUNIDADES
+
+	-En responsive, el buscador de comunidades no debe mostrar imágenes (solo en desktop) | listo
+	-El listado de Comunidades se ve cortado, es decir no se muestra su contenido completo | listo
+
+
+BASE.HTML | listo
+
+	-Actualizar footer con información real del MAGA en base.html(magabvpurulha@gmail.com
+km 164.5, @2025 Todos los Derechos reservados | Oficina Regional Maga Purulhá km 164,5 CA14
+)
+
+
+
+
+GESTIONES | listo 
+
+	-en eliminar evento no puedo eliminar un evento detrás de otro, es decir no puedo eliminar dos eventos seguidos, tengo que recargar la pagina
+	-arreglar api verificar-admin, esto hace que no pueda eliminar usuarios ni eventos del sistema
+	-arreglar vista de formulario de confirmación para eliminar un evento, se ven letras grises y deberían ser blancas cuando el usuario esta escribiendo, agregar el widget del ojo para ver contraseña, y arreglar estética de botones
+
+ 
+
+REPORTES | SListo
+	
+	cambiar tarjeta de próximas actividades(7 días) por "actividades trabajadas recientemente" |listo✓✓
+	la tarjeta de trabajadores activo duplica los usuarios, es decir toma a usuarios y colaboradores cuando solamente debería llamar a los colaboradores |listo✓✓
+	no esta mostrando todos los beneficiarios bien, arreglar para que si busque los beneficiarios de la tabla correcta. |listo✓✓
+	eliminar switch de comunidad-región en el reporte de beneficiario |listo✓✓
+	no esta mostrando todos los eventos del sistema, arreglar para que si busque correctamente los eventos de su tabla. |listo✓✓
+	dejo de funcionar reporte de comunidades |listo✓✓
+	reporte de avances de eventos generales muestra la evidencia sin descripción, tiene mostrar la descripción del avance, y no la descripción del avance |listo✓✓
+	dejo de funcionar reporte de actividad de usuarios | listo ✓✓
+	Generar PDF/WORD de cada reporte | FALTA
+
+CALENDARIO
+
+	-si estoy como un usuario que es personal no puedo agregar a mas usuarios al recordatorio, solo el mio y los demás colaboradores ni siquiera se muestren. | esperar a despliegue
+	-Arreglar Funcion que envie notificación aun cuando no se esta en la web. que el navegador cree un registro y mande una notificación al dispositivo, sin importar su SO (Android, ios, mac, Windows etc), AUN CUANDO LA PAGINA NO ESTÉ ACTIVA | esperar a despliegue
+	-arreglar que los avances se muestre por su grupo_id de la tabla eventos_cambios_colaboradores | listo ✓✓
+	.el admin no puede ver notificaciones individuales de los demás usuarios solo los puede agregar y eliminar las que el mismo admin agrego.
+
+CONFIG
+
+	-agregar correo de contacto | recupmagabvpurulha@gmail.com
+	-hacer funcional el formulario de enviar comentario/reportar error etc. Que el formulario a travez de una api envie un correo electronico a el correo de contacto designado con el contenido del formulario que se lleno. 
+	-Arreglar funciones correctas de Terminos y condiciones | LISTO	
+	-verificar informacion en preguntasfrecuentes.html
+
+
+EN RESPONSIVE NO FUNCIONA EL BOTON AGREGAR CAMBIO AVECES SE BLOQUEA
+NO FUNCIONA BOTON GUARDAR AL EDITAR UN AVANCE/CAMBIO EN VISTA INDIVIDUAL DE EVENTO
+
+
+
+OPCIONAL
+
+	-crear funcion de importar y leer archivos de excel para leer beneficiarios, definir plantilla y hacer testeos.
+	-si se crea la funcion de importar excel, que tambien el excel de exportar reporte, tenga esta plantilla.
+	-al crear el evento que aparezca el botón "ver evento creado"
+
+
+no puedo crear un usuario vinculando con un colaborador YA EXISTENTE | LISTOOOOOO
+
+
+--------------------------------------------------------------------------------------------------------------
+
+NUEVOS BUGS
+
+botón ver todos los eventos aveces se bloquea se pone como selección de texto
+
+
+mejorar el botón de buscar proyectos que esta en base.html
+
+
+
+
+

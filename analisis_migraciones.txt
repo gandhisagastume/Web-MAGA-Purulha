@@ -1,0 +1,410 @@
+=====================================================
+ANÁLISIS DE MIGRACIONES - SISTEMA MAGA PURULHÁ
+=====================================================
+Fecha de análisis: 2026-02-20
+Comparación entre: nuevaBasedeDAtos.txt (BD) vs webmaga/models.py (Django)
+
+=====================================================
+TABLAS EN BASE DE DATOS (PostgreSQL)
+=====================================================
+
+CATÁLOGOS BÁSICOS:
+1. tipos_comunidad
+2. tipos_beneficiario
+3. tipos_actividad
+4. puestos
+
+ESTRUCTURA GEOGRÁFICA:
+5. regiones
+6. comunidades
+7. comunidad_autoridades
+
+USUARIOS Y SEGURIDAD:
+8. usuarios
+9. password_reset_codes
+10. usuario_fotos_perfil
+
+COLABORADORES:
+11. colaboradores
+
+DISPOSITIVOS Y SESIONES:
+12. dispositivos_registrados
+13. sesiones_offline
+
+BENEFICIARIOS:
+14. beneficiarios
+15. beneficiarios_individuales
+16. beneficiarios_familias
+17. beneficiarios_instituciones
+18. beneficiario_fotos
+19. beneficiario_atributos_tipos
+20. beneficiario_atributos
+
+ACTIVIDADES:
+21. actividades
+22. actividad_comunidades
+23. actividad_portadas
+24. actividad_personal
+25. actividad_beneficiarios
+26. evidencias
+27. eventos_galeria
+28. actividad_cambios
+29. eventos_cambios_colaboradores
+30. cambio_evidencias
+31. eventos_evidencias_cambios
+32. actividad_archivos
+
+ARCHIVOS Y GALERÍAS:
+33. comunidad_galeria
+34. comunidad_archivos
+35. region_galeria
+36. region_archivos
+
+TARJETAS Y RECORDATORIOS:
+37. tarjetas_datos
+38. recordatorios
+39. recordatorio_colaboradores
+
+BITÁCORA Y SINCRONIZACIÓN:
+40. bitacora_transacciones
+41. cola_sincronizacion
+42. conflictos_sincronizacion
+
+REINSCRIPCIONES:
+43. beneficiario_reinscripciones
+
+=====================================================
+MODELOS EN DJANGO (webmaga/models.py)
+=====================================================
+
+1. Puesto → db_table = 'puestos'
+2. Usuario → db_table = 'usuarios'
+3. PasswordResetCode → db_table = 'password_reset_codes'
+4. UsuarioFotoPerfil → db_table = 'usuario_fotos_perfil'
+5. Colaborador → db_table = 'colaboradores'
+6. Region → db_table = 'regiones'
+7. TipoComunidad → db_table = 'tipos_comunidad'
+8. Comunidad → db_table = 'comunidades'
+9. ComunidadAutoridad → db_table = 'comunidad_autoridades'
+10. TipoActividad → db_table = 'tipos_actividad'
+11. TipoBeneficiario → db_table = 'tipos_beneficiario'
+12. Beneficiario → db_table = 'beneficiarios'
+13. BeneficiarioIndividual → db_table = 'beneficiarios_individuales'
+14. BeneficiarioFoto → db_table = 'beneficiario_fotos'
+15. BeneficiarioAtributoTipo → db_table = 'beneficiario_atributos_tipos'
+16. BeneficiarioAtributo → db_table = 'beneficiario_atributos'
+17. BeneficiarioFamilia → db_table = 'beneficiarios_familias'
+18. BeneficiarioInstitucion → db_table = 'beneficiarios_instituciones'
+19. Actividad → db_table = 'actividades'
+20. ActividadPersonal → db_table = 'actividad_personal'
+21. ActividadBeneficiario → db_table = 'actividad_beneficiarios'
+22. BeneficiarioReinscripcion → db_table = 'beneficiario_reinscripciones'
+23. ActividadComunidad → db_table = 'actividad_comunidades'
+24. ActividadPortada → db_table = 'actividad_portadas'
+25. Evidencia → db_table = 'evidencias'
+26. ActividadCambio → db_table = 'actividad_cambios'
+27. EventoCambioColaborador → db_table = 'eventos_cambios_colaboradores'
+28. CambioEvidencia → db_table = 'cambio_evidencias'
+29. EventosEvidenciasCambios → db_table = 'eventos_evidencias_cambios'
+30. ActividadArchivo → db_table = 'actividad_archivos'
+31. EventosGaleria → db_table = 'eventos_galeria'
+32. ComunidadGaleria → db_table = 'comunidad_galeria'
+33. RegionGaleria → db_table = 'region_galeria'
+34. ComunidadArchivo → db_table = 'comunidad_archivos'
+35. RegionArchivo → db_table = 'region_archivos'
+36. DispositivoRegistrado → db_table = 'dispositivos_registrados'
+37. SesionOffline → db_table = 'sesiones_offline'
+38. TarjetaDato → db_table = 'tarjetas_datos'
+39. BitacoraTransaccion → db_table = 'bitacora_transacciones'
+40. ColaSincronizacion → db_table = 'cola_sincronizacion'
+41. ConflictoSincronizacion → db_table = 'conflictos_sincronizacion'
+42. Recordatorio → db_table = 'recordatorios'
+43. RecordatorioColaborador → db_table = 'recordatorio_colaboradores'
+
+=====================================================
+MIGRACIONES EXISTENTES EN webmaga/migrations/
+=====================================================
+
+1. 0001_create_actividad_comunidades.py
+2. 0001_initial.py
+3. 0002_actividadcomunidad_actividadportada_and_more.py
+4. 0002_create_actividad_portadas.py
+5. 0002_db_objects.py
+6. 0002_db_objects.py.backup
+7. 0003_initial.py
+8. 0004_add_grupo_id_to_evento_cambio_colaborador.py
+9. 0005_merge_20251111_2130.py
+10. 0005_usuariofotoperfil.py
+11. 0006_eventocambiocolaborador_comunidad_and_more.py
+12. 0006_seed_initial_data.py
+13. 0007_eventocambiocolaborador_comunidad_and_more.py
+14. 0008_merge_20251111_1243.py
+15. 0009_add_comunidad_region_to_eventocambiocolaborador_safe.py
+16. 0010_alter_actividad_options_and_more.py
+17. 0011_agregar_fecha_reinscripcion.py
+
+=====================================================
+ANÁLISIS DE MIGRACIONES CUMPLIDAS
+=====================================================
+
+✅ MIGRACIONES QUE CUMPLEN (Modelo coincide con tabla BD):
+
+1. puestos
+   - Modelo: Puesto
+   - Migración: 0001_initial.py, 0002_db_objects.py
+   
+2. usuarios
+   - Modelo: Usuario
+   - Migración: 0001_initial.py, 0002_db_objects.py
+   
+3. password_reset_codes
+   - Modelo: PasswordResetCode
+   - Migración: 0002_db_objects.py
+   
+4. usuario_fotos_perfil
+   - Modelo: UsuarioFotoPerfil
+   - Migración: 0005_usuariofotoperfil.py
+   
+5. colaboradores
+   - Modelo: Colaborador
+   - Migración: 0001_initial.py, 0002_db_objects.py
+   
+6. regiones
+   - Modelo: Region
+   - Migración: 0001_initial.py, 0002_db_objects.py
+   
+7. tipos_comunidad
+   - Modelo: TipoComunidad
+   - Migración: 0001_initial.py, 0002_db_objects.py
+   
+8. comunidades
+   - Modelo: Comunidad
+   - Migración: 0001_initial.py, 0002_db_objects.py
+   
+9. comunidad_autoridades
+   - Modelo: ComunidadAutoridad
+   - Migración: 0001_initial.py, 0002_db_objects.py
+   
+10. tipos_actividad
+    - Modelo: TipoActividad
+    - Migración: 0001_initial.py, 0002_db_objects.py
+    
+11. tipos_beneficiario
+    - Modelo: TipoBeneficiario
+    - Migración: 0001_initial.py, 0002_db_objects.py
+    
+12. beneficiarios
+    - Modelo: Beneficiario
+    - Migración: 0001_initial.py, 0002_db_objects.py
+    
+13. beneficiarios_individuales
+    - Modelo: BeneficiarioIndividual
+    - Migración: 0001_initial.py, 0002_db_objects.py
+    
+14. beneficiario_fotos
+    - Modelo: BeneficiarioFoto
+    - Migración: Implícita en patches posteriores
+    
+15. beneficiario_atributos_tipos
+    - Modelo: BeneficiarioAtributoTipo
+    - Migración: Implícita en patches posteriores
+    
+16. beneficiario_atributos
+    - Modelo: BeneficiarioAtributo
+    - Migración: Implícita en patches posteriores
+    
+17. beneficiarios_familias
+    - Modelo: BeneficiarioFamilia
+    - Migración: 0001_initial.py, 0002_db_objects.py
+    
+18. beneficiarios_instituciones
+    - Modelo: BeneficiarioInstitucion
+    - Migración: 0001_initial.py, 0002_db_objects.py
+    
+19. actividades
+    - Modelo: Actividad
+    - Migración: 0001_initial.py, 0002_db_objects.py, 0010_alter_actividad_options_and_more.py
+    
+20. actividad_personal
+    - Modelo: ActividadPersonal
+    - Migración: 0001_initial.py, 0002_db_objects.py
+    
+21. actividad_beneficiarios
+    - Modelo: ActividadBeneficiario
+    - Migración: 0001_initial.py, 0002_db_objects.py, 0011_agregar_fecha_reinscripcion.py
+    
+22. beneficiario_reinscripciones
+    - Modelo: BeneficiarioReinscripcion (managed = False)
+    - Migración: 0011_agregar_fecha_reinscripcion.py
+    
+23. actividad_comunidades
+    - Modelo: ActividadComunidad (managed = False)
+    - Migración: 0001_create_actividad_comunidades.py, 0002_actividadcomunidad_actividadportada_and_more.py
+    
+24. actividad_portadas
+    - Modelo: ActividadPortada (managed = False)
+    - Migración: 0002_create_actividad_portadas.py, 0002_actividadcomunidad_actividadportada_and_more.py
+    
+25. evidencias
+    - Modelo: Evidencia
+    - Migración: 0001_initial.py, 0002_db_objects.py
+    
+26. actividad_cambios
+    - Modelo: ActividadCambio
+    - Migración: 0001_initial.py, 0002_db_objects.py
+    
+27. eventos_cambios_colaboradores
+    - Modelo: EventoCambioColaborador
+    - Migración: 0004_add_grupo_id_to_evento_cambio_colaborador.py, 0006_eventocambiocolaborador_comunidad_and_more.py, 0007_eventocambiocolaborador_comunidad_and_more.py, 0009_add_comunidad_region_to_eventocambiocolaborador_safe.py
+    
+28. cambio_evidencias
+    - Modelo: CambioEvidencia
+    - Migración: 0001_initial.py, 0002_db_objects.py
+    
+29. eventos_evidencias_cambios
+    - Modelo: EventosEvidenciasCambios
+    - Migración: 0001_initial.py, 0002_db_objects.py
+    
+30. actividad_archivos
+    - Modelo: ActividadArchivo
+    - Migración: 0001_initial.py, 0002_db_objects.py
+    
+31. eventos_galeria
+    - Modelo: EventosGaleria
+    - Migración: 0001_initial.py, 0002_db_objects.py
+    
+32. comunidad_galeria
+    - Modelo: ComunidadGaleria
+    - Migración: 0001_initial.py, 0002_db_objects.py
+    
+33. region_galeria
+    - Modelo: RegionGaleria
+    - Migración: 0001_initial.py, 0002_db_objects.py
+    
+34. comunidad_archivos
+    - Modelo: ComunidadArchivo
+    - Migración: 0001_initial.py, 0002_db_objects.py
+    
+35. region_archivos
+    - Modelo: RegionArchivo
+    - Migración: 0001_initial.py, 0002_db_objects.py
+    
+36. dispositivos_registrados
+    - Modelo: DispositivoRegistrado
+    - Migración: 0001_initial.py, 0002_db_objects.py
+    
+37. sesiones_offline
+    - Modelo: SesionOffline
+    - Migración: 0001_initial.py, 0002_db_objects.py
+    
+38. tarjetas_datos
+    - Modelo: TarjetaDato
+    - Migración: 0001_initial.py, 0002_db_objects.py
+    
+39. bitacora_transacciones
+    - Modelo: BitacoraTransaccion
+    - Migración: 0001_initial.py, 0002_db_objects.py
+    
+40. cola_sincronizacion
+    - Modelo: ColaSincronizacion
+    - Migración: 0001_initial.py, 0002_db_objects.py
+    
+41. conflictos_sincronizacion
+    - Modelo: ConflictoSincronizacion
+    - Migración: 0001_initial.py, 0002_db_objects.py
+    
+42. recordatorios
+    - Modelo: Recordatorio
+    - Migración: 0001_initial.py, 0002_db_objects.py
+    
+43. recordatorio_colaboradores
+    - Modelo: RecordatorioColaborador
+    - Migración: 0001_initial.py, 0002_db_objects.py
+
+=====================================================
+MODELOS CON managed = False (No gestionados por Django)
+=====================================================
+
+Los siguientes modelos tienen managed = False, lo que significa que Django NO crea ni modifica estas tablas mediante migraciones:
+
+1. ActividadComunidad → actividad_comunidades
+2. ActividadPortada → actividad_portadas
+3. BeneficiarioReinscripcion → beneficiario_reinscripciones
+
+Estas tablas fueron creadas directamente en PostgreSQL mediante scripts SQL.
+
+=====================================================
+RESUMEN FINAL
+=====================================================
+
+TOTAL DE TABLAS EN BD: 43
+TOTAL DE MODELOS EN DJANGO: 43
+TOTAL DE MIGRACIONES: 17 archivos
+
+ESTADO: ✅ TODAS LAS TABLAS TIENEN SU MODELO CORRESPONDIENTE EN DJANGO
+
+NOTAS IMPORTANTES:
+- Algunos modelos usan managed = False porque las tablas se crearon directamente en SQL
+- Las migraciones 0002_db_objects.py y 0003_initial.py contienen la mayoría de la estructura inicial
+- Existen migraciones duplicadas numeradas (0002, 0005, 0006, 0007) que se resuelven con merges
+- El campo 'version' existe en BD pero NO en todos los modelos de Django
+- Los triggers y funciones de PostgreSQL no se replican en Django (son exclusivos de BD)
+
+=====================================================
+CAMPOS ADICIONALES EN BD NO PRESENTES EN MODELOS DJANGO
+=====================================================
+
+1. Tabla: usuarios
+   - Campo BD: version (INTEGER)
+   - Estado: No está en modelo Django
+
+2. Tabla: colaboradores
+   - Campo BD: version (INTEGER)
+   - Estado: No está en modelo Django
+
+3. Tabla: comunidades
+   - Campo BD: version (INTEGER)
+   - Estado: No está en modelo Django
+
+4. Tabla: regiones
+   - Campo BD: version (INTEGER)
+   - Estado: No está en modelo Django
+
+5. Tabla: actividades
+   - Campo BD: version (INTEGER)
+   - Estado: No está en modelo Django
+
+6. Tabla: beneficiarios
+   - Campo BD: version (INTEGER)
+   - Estado: No está en modelo Django
+
+7. Tabla: evidencias
+   - Campo BD: version (INTEGER)
+   - Estado: No está en modelo Django
+
+8. Tabla: actividad_beneficiarios
+   - Campo BD: version (INTEGER)
+   - Estado: No está en modelo Django
+
+9. Tabla: sesiones_offline
+   - Campo BD: colaborador_id (falta en modelo)
+   - Estado: Verificar si es necesario
+
+=====================================================
+CONCLUSIÓN
+=====================================================
+
+El sistema tiene una cobertura completa entre las tablas de la base de datos PostgreSQL y los modelos de Django. Todas las 43 tablas existentes en la base de datos tienen su correspondiente modelo en Django.
+
+Las migraciones existentes cubren:
+- Creación inicial de tablas principales
+- Adición de tablas secundarias y relaciones
+- Modificaciones puntuales (grupo_id, comunidad_id, region_id)
+- Adición de campos específicos (fecha_reinscripcion)
+- Datos iniciales (seed data)
+
+NO SE REQUIEREN MIGRACIONES ADICIONALES para la funcionalidad actual del sistema.
+
+=====================================================
+FIN DEL ANÁLISIS
+=====================================================

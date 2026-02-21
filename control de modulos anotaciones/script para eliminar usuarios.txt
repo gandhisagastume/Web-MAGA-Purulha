@@ -1,0 +1,50 @@
+BEGIN;
+
+-- 1) Desasociar al usuario de cualquier colaborador
+UPDATE colaboradores
+SET 
+    usuario_id = NULL,
+    es_personal_fijo = FALSE
+WHERE usuario_id = (
+    SELECT id FROM usuarios WHERE username = 'jchendiaz15'
+);
+
+-- 2) Limpiar conflictos de sincronización resueltos por este usuario
+UPDATE conflictos_sincronizacion
+SET resuelto_por = NULL
+WHERE resuelto_por = (
+    SELECT id FROM usuarios WHERE username = 'jchendiaz15'
+);
+
+-- 3) Eliminar el usuario definitivamente
+DELETE FROM usuarios
+WHERE username = 'jchendiaz15';
+
+COMMIT;
+
+
+------------------------------------------------------------------------
+
+BEGIN;
+
+-- 1) Borrar actividades donde él es responsable y no hay colaborador
+DELETE FROM actividades
+WHERE responsable_id = (SELECT id FROM usuarios WHERE username = 'trabajadormaga1')
+  AND colaborador_id IS NULL;
+
+-- 2) Limpiar conflictos
+UPDATE conflictos_sincronizacion
+SET resuelto_por = NULL
+WHERE resuelto_por = (SELECT id FROM usuarios WHERE username = 'trabajadormaga1');
+
+-- 3) Desasociar de colaboradores
+UPDATE colaboradores
+SET usuario_id = NULL,
+    es_personal_fijo = FALSE
+WHERE usuario_id = (SELECT id FROM usuarios WHERE username = 'trabajadormaga1');
+
+-- 4) Eliminar usuario
+DELETE FROM usuarios
+WHERE username = 'trabajadormaga1';
+
+COMMIT;

@@ -1,0 +1,295 @@
+unir Actividades por región y comunidad en uno solo
+	se pasara a llamar: "Actividades por región o comunidad"
+	mejoras del formulario:
+	poner un "switch" para elegir si comunidad o región
+	cambiar donde se pone las fechas por un botón con un combobox en donde tenga las opciones de:
+	"ultimo mes" "esta ultima semana" "rango de fechas(aquí se muestra los campos con fecha inicial y final como esta ahora)" 
+	buscador de comunidades(que busquen todas las comunidades)
+	mejoras de la vista que muestra:
+	colocar aquí el numero total de beneficiarios con su tipo
+	mostrar responsables de esa actividad 
+	mostrar fecha y estado del evento 
+	
+
+
+unir beneficiarios por región y comunidad en uno solo
+	se pasara a llamar: "beneficiarios por región o comunidad"
+	mejoras del formulario:
+	poner un "switch" para elegir si comunidad o región
+	buscador de comunidades(que busquen todas las comunidades)
+	cambiar donde se pone las fechas por un botón con un combobox en donde tenga las opciones de:
+	"ultimo mes" "esta ultima semana" "rango de fechas(aquí se muestra los campos con fecha inicial y final como esta ahora)"
+	quitar responsable
+	filtrar por evento (es decir la lista de los eventos del sistema)
+	Mejoras del resultado de la vista:
+	listado de todos los beneficiarios con todos sus datos clave y a que evento pertenecen
+	
+
+cambios:
+
+"Actividades por región o comunidad"
+	mejoras del formulario:
+	agregar estado del evento (planificado, en progreso, completado, cancelado)
+	agregar tipo de actividad (capacitación, entrega, proyecto de ayuda)
+
+
+"beneficiarios por región o comunidad"
+	mejoras del formulario:
+	agregar tipo de actividad (capacitación, entrega, proyecto de ayuda)
+	agregar tipo de beneficiario (individual, familia, institución, otro)
+
+
+
+------------------------------------------------------------------------------------------
+
+unir reportes de Personal en uno solo.
+
+unir actividades por responsable y participación de volaboradores en uno nuevo llamado:
+"actividad de personal"
+
+formulario:
+
+	-cambiar donde se pone las fechas por un botón con un combobox en donde tenga las opciones de: "todo el tiempo" "ultimo mes" "esta ultima semana" "rango de fechas(aquí se muestra los campos con fecha inicial y final como esta ahora)" 
+	-buscador de comunidades(que busquen todas las comunidades)
+	-listado de eventos (desplegable con todos los eventos disponibles en el sistema con un buscador)
+	-estado del evento tipo checklist (planificado, en progreso, completado, cancelado)
+	-tipo de actividad tipo checklist (capacitación, entrega, proyecto de ayuda)
+	-listado de colaboradores (solo colaboradores no usuarios, una lista desplegable con un buscador )
+
+
+vista tabla: (estos datos son los que se llaman de la tabla de cambios de eventos la tabla llamada: 
+
+	-tabla individual para cada colaborador(es decir que si son dos colaboradores cada uno tendra su tabla) 
+	-datos clave del colaborador (nombre, puesto, telefono)
+	-total de eventos alcanzados por ese colaborador
+	-numero de cambios/avances realizados de cada colaborador 
+	-el evento en donde hizo ese cambio/avance
+	-estado y tipo del evento	
+	-comunidad donde hizo ese cambio/avance
+
+un ejemplo para que se entienda lo que quiero sería:
+
+colaborador Diego
+tel 	82823812
+PUESTO  extensionista
+
+TOTAL EVENTOS TRABAJADOS 2
+TOTAL DE AVANCES REALIZADOS 12
+EVENTOS EN EL QUE TRABAJO(aqui serian como unas minitablas para los eventos):
+APIARIO				 | HUERTO FAMILIAR
+evento en progreso		   evento completado
+caseío ebenezer			   barrio el centro
+Avances realizados: 8 		   Avances realizados: 4
+fecha primer Avance: 10/08/2025	   fecha primer avance: 10/07/2025
+fecha ultimo Avance: 3/11/2025 	   fecha ultimo avance: 28/10/2025
+
+
+adaptalo para responsive tambien.
+
+
+------------------------------------------------------------------------------------
+
+cambiar nombre de BENEFICIAPOR POR REGION O COMUNIDAD a REPORTE BENEFICIARIOS
+
+la tarjeta de trabajadores activo duplica los usuarios, es decir toma a usuarios y colaboradores cuando solamente debería llamar a los colaboradores
+
+para reportes de evidencias llamar de la tabla: CREATE TABLE eventos_evidencias_cambios |✓✓
+
+verificar si en el modulo de reportes de beneficiarios ya muestra los beneficiarios por su lista de comunidad cuando existen mas de un proyectos
+
+borrar REPORTES DE TIPOS DE ACTIVIDAD
+	-distribución por tipo
+	-beneficiarios por tipo de actividad
+
+
+eliminar sección de reportes temporales
+	-actividades por periodo
+	-tendencias de eventos
+	-eventos próximos
+
+eliminar reportes de beneficiarios extras
+
+
+-------------------------------------------------------------------------------------------
+
+Creemos la parte de reportes de Avances.
+
+estos reemplazaran a la parte de reportes de evidencia y serán dos tarjetas.
+
+	Avances de eventos Generales (listado de un avances con descripción y evidencias)
+	Reporte de Evento Individual
+
+asi que primero elimina esta sección actual y crea esta nueva sección.
+
+que es lo que lleva cada uno de estos modulos de reportes
+
+Avances de eventos Generales (listado de un avances con descripción y evidencias):
+
+formulario:
+
+	-donde se pone las fechas por un botón con un combobox en donde tenga las opciones  de: "todo el tiempo" "ultimo mes" "esta ultima semana" "rango de fechas(selecciona un rango esecifico de fechas)" | ya existe en otro modulo guíate de ahi
+	-buscador de comunidades(que busquen todas las comunidades) | ya existe en otro modulo guíate de ahi
+	-listado de eventos (desplegable con todos los eventos disponibles en el sistema con un buscador) | ya existe en otro modulo guíate de ahí
+	-tipo de actividad tipo checklist (capacitación, entrega, proyecto de ayuda) | ya existe en otro modulo guíate de ahí
+	-listado de colaboradores (solo colaboradores no usuarios, una lista desplegable con un buscador ) | ya existe en otro modulo guíate de ahí
+	-mostrar archivos de evidencias (opcion con si o no)| nuevo
+
+
+	
+
+vista tabla: (estos datos son los que se llaman de la tabla de cambios de eventos la tabla llamada: eventos_evidencias_cambios para las evidencias
+y la tabla: eventos_cambios_colaboradores para la descripción de los cambios/avances y el cambio/avance en general que se hizo.
+ 
+	-Datos generales del Proyecto/evento (nombre, estado, comunidad(es)| nuevo
+	-dato del Total de cambios/avances que hubo en el evento | nuevo
+	-numero de cambios/avances realizados de cada colaborador | nuevo	
+	-Datos de los cambios/avances (el cambio y la descripción de ese cambio, fecha etc) | nuevo
+	-Mostrar el colaborador que hizo el cambio (Ej "hecho por: Manuel Lopez") | nuevo
+	-evidencia del avance (aquí que se muestre el avance y su evidencia, por ejemplo si en un evento hubo un cambio con dos evidencias y las evidencias son fotos, que se muestren las fotos en un apartado especial en la misma tabla del reporte.
+si las evidencias son archivos pues lo mismo que se muestren con su opción de descargar
+
+si son mas de dos eventos que cada evento/proyecto tenga su tabla individual
+
+
+
+Reporte de Evento Individual:
+
+formulario:
+
+	-tipo de actividad tipo checklist (todos, capacitación, entrega, proyecto de ayuda con un cheklist)
+	-listado de eventos (desplegable con todos los eventos disponibles en el sistema con un buscador, ojo la lista de proyectos se actualiza si se selecciona un tipo especifico de evento ojo solo se puede seleccionar un ) | ya existe en otro modulo guíate de ahí
+
+
+vista de tabla: 
+
+	-Datos detallados del Proyecto 
+	-como se ve en su vista individual de evento
+	-todos sus detalles desde el nombre beneficiarios y demas. los beneficiarios que tambien se muestre como en una tabla separada. con la opcion de ocultar y desplegar esa tabla. de misma manera, la tabla de cambios tendra caracteristicas asi.
+	-mostrar su apartado de galeria de imagenes
+	-archivos del proyecto tambien se pueden descargar 
+
+
+------------------------------------------------------------------------------------------
+
+
+Bien ahora creemos el modulo de reportes de comunidades, que basicamente lo que mas quiero es crear un reporte de comunidades alcanzadas.
+
+por lo que ya tenemos ahora no me interesa los demas reportes de comunidades que hay, por lo que eliminalos.
+
+
+me refiero a los modulos de:
+
+Comunidades mas Activas
+Comunidades sin actividades
+Distribucion por Tipo
+Comunidades por Region
+
+todo seto lo vamos a unir en una nueva tarjeta que sera la de:
+Comunidades
+su descripcion sera:
+"Comunidades alcanzadas conproyectos, estadisticas generales de comunidades"
+
+
+teniendo esto en cuenta que es lo que llevara nuestro nuevo modulo?
+
+bien el nuevo modulo tendra lo siguiente 
+
+Formulario:
+
+	-donde se pone las fechas por un botón con un combobox en donde tenga las opciones  de: "todo el tiempo" "ultimo mes" "esta ultima semana" "rango de fechas(selecciona un rango esecifico de fechas)" | ya existe en otro modulo guíate de ahi
+	-tipo de actividad tipo checklist (todos, capacitación, entrega, proyecto de ayuda con un cheklist)
+	-listado de eventos/proyectos (desplegable con todos los eventos disponibles en el sistema con un buscador, ojo la lista de proyectos se actualiza si se selecciona un tipo especifico de evento, ojo solo se puede seleccionar uno a la vez, si no se selecciona ninguno se guiara la búsqueda por la comunidad, pudiendo cargar varios proyectos a la vez dependiendo si la comunidad esta alcanzada por mas de un proyecto) 
+	-buscador de comunidades(que busquen todas las comunidades, ojo se pueden seleccionar mas de una comunidad entonces puede ser como un checklist, si no se selecciona ninguna que mande mensaje de notificación en el mismo sistema que porfavos seleccione almenos 1 comunidad)
+
+
+
+
+vista que devuelve:
+
+	-opción de ordenar por mas/menos Activas
+	-opción de ordenar por tipo (barrio, caserío, aldea)
+
+
+	-información general de la comunidad(numero de beneficiarios, cocode de la comunidad, numero de proyectos de la comunidad, región a la que pertenece etc.) 
+	-beneficiarios de la comunidad y en que eventos están incluidos
+	-información general del proyecto si la comunidad esta alcanzada por este proyecto
+	
+
+
+----------------------------------------------------------------------------------------------------
+
+
+Bien ahora trabajemos el modulo de reportes de auditoria.
+
+primero eliminemos estas tres tarjetas:
+cambios en actividades
+actividad de usuarios
+operaciones por usuarios
+
+unifiquemos todo esto en uno solo llamado 
+actividad de usuarios
+
+
+que llevara este modulo de reporte?
+
+formulario:
+
+	-donde se pone las fechas por un botón con un combobox en donde tenga las opciones  de: "todo el tiempo" "ultimo mes" "esta ultima semana" "rango de fechas(selecciona un rango esecifico de fechas)" | ya existe en otro modulo guíate de ahi
+	-tipo de actividad tipo checklist (todos, capacitación, entrega, proyecto de ayuda con un cheklist)
+	-listado de eventos/proyectos (desplegable con todos los eventos disponibles en el sistema con un buscador, ojo la lista de proyectos se actualiza si se selecciona un tipo especifico de evento, ojo solo se puede seleccionar uno a la vez, si no se selecciona ninguno se guiara la búsqueda por la comunidad, pudiendo cargar varios proyectos a la vez dependiendo si la comunidad esta alcanzada por mas de un proyecto) 
+	-buscador de comunidades(que busquen todas las comunidades, ojo se pueden seleccionar mas de una comunidad entonces puede ser como un checklist, si no se selecciona ninguna se guía por el de proyectos/eventos. si en ambos casos no se eligío ninguno, se buscara todo.
+	-listado de usuarios del sistema (ojo usuarios y no colaboradores, si están vinculados con un usuario en ese caso si mostrarlos en la lista, la lista es desplegable con un tipo checklist para seleccionar varios a la vez, si no se selecciona ninguno pues se buscan todos)
+
+que devuelve la vista:
+
+	-opción de ordenar por usuario mas/menos activo
+	
+
+
+	-que exista el titulo de la tabla con el nombre del usuario y su información general.
+	-información general de los cambios realizados de ese usuario. (el cambio, fecha,)
+	-separado por evento
+	-si se selecciona mas de un usuario que cada usuario tenga su tabla individual donde se muestre la información de sus cambios
+	si se selecciona un usuario en donde no tenga actividad, mostrar la informacion general del usuario como titulo de la tabla y en contenido el mensaje de que ese usuario no tiene actividad en ese evento o comunidad
+
+-------------------------------------------------------------------------------------------------------------
+
+trabajemos el ultimo modulo el cual es el modulo de:
+
+crear REPORTES GENERALES
+
+este es un nuevo modulo por lo cual agregar un boton de crear reporte general en el dashboard, por encima de las tarjetas, a la par del texto dashboard ejecutivo.
+
+que hace este reporte?
+
+este reporte genera directamente la info general de la oficina.
+
+es decir que las tarjetas que se muestran en el dashboard y estadisticas ahora pasan a estar en un reporte.
+
+
+-total de eventos (listar los eventos con su info general, poner opción de listar evento con un checklist para seleccionar si se desea listar o no)
+-total de tipos de eventos (capacitaciones, entrega y proyectos de ayuda)
+-total de beneficiarios alcanzados 
+-total de tipo de beneficiarios alcanzados ( mujeres, hombres, instituciones, familias etc)
+-total de comunidades alcanzadas
+-total de avances realizados en proyectos 
+-comunidades con mas beneficiarios y eventos
+-eventos con mas beneficiarios
+-evento con mas avances y cambios
+
+
+aqui solo habra formulario sera solo el de:
+
+fechas por un botón con un combobox en donde tenga las opciones  de: "todo el tiempo" "ultimo mes" "esta ultima semana" "rango de fechas(selecciona un rango esecifico de fechas)" | ya existe en otro modulo guíate de ahi
+
+y un tipo checklist con todos los apartados que ya te mencione, y si se selecciona o se quita uno de los apartados simplemente no se muestra en el reporte general.
+
+la vista hazla moderna y que este acorde a los demás modulos de reportes
+
+
+
+
+
+verificar si en el modulo de reportes de beneficiarios ya muestra los beneficiarios por su lista de comunidad cuando existen mas de un proyectos
+
+	

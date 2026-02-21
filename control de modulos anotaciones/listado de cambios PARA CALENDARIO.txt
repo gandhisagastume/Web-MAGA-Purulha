@@ -1,0 +1,52 @@
+CAMBIOS DE CALENDARIO/MEJORAS/ARREGLOS
+
+en avances de evento verificar que  solo este la notificación de lo que se actualizo:
+	avances de eventos
+no se muestra: 
+	cambios en la ficha de evento.	
+
+no mostrar datos 
+
+PARA index.html (calendario(control de permisos))
+
+vistas/control de vista del calendario si no estoy como administrador:
+
+-no puedo eliminar recordatorio si YO NO LO CREE
+
+-no puedo agregar otro usuario en ese recordatorio SOLO EL MIO
+
+OPCIONAL
+
+
+-que si un recordatorio/evento/avance esta involucrado CON MI USUARIO DEL SISTEMA (a travez de la vinculación de colaborador con el usuario) el dia "brille"
+esto para un mejor control de actividades
+
+-Que envie notificaciones si TENGO UN USUARIO INVOLUCRADO en un recordatorio. esta notificación tiene que llegar al celular/computadora.te falta alg
+
+
+BUGS
+
+vista en desktop se ve mal
+
+
+----------------------------------------------------------------------------------------------------------------------
+
+bien ahora intentemos implementar una nueva función en el sistema del calendario, el cual es el envió de notificaciones.
+
+como funcionara esto, pues es simple, se basara en la fehca y hora del recordatorio.
+
+primero agrega un nuevo botón que se pueda seleccionar como un checklist que sea el botón de "recordar"
+este botón de recordar si se selecciona lo que hará es que la notificación se volverá a enviar 10 minutos después de la hora cumplida.
+
+bien la notificación quiero que directamente llegue a Windows, o al dispositivo que este ejecutando la web.
+
+la notificación se enviara automáticamente cuando en un recordatorio se cumpla la hora. y si se marco la notificación recordar pues se volverá a mandar otra notificación 10 minutos después.
+
+el contenido de la notificación es el contenido del recordatorio que previamente se creo.
+
+ojo con el envió de notificaciones SOLO ENVIARA NOTIFICACIONES A LOS USUARIOS QUE SE MARCARON COMO INVOLUCRADOS EN EL FORMULARIO DE AÑADIR RECORDATORIO, por lo que no tiene que enviar notificaciones a otros usuario.
+
+ojo también quiero que se envíen recordatorios aun cuando la web no este corriendo o no este activa, o mejor dicho si la sesión del usuario no este activa. asi que media vez este un recordatorio activo el sistema tenga preparado un envió de notificación para ese usuario.
+ y si el usuario esta activo que también se muestre un mensaje de notificación en la misma web, esto solo si el usuario al que se le envia la notificación esta dentro del sistema en ese momento.
+
+Al administrador no siempre se le enviara notificaciones, ya que como te dije antes SOLO SE ENVIAN NOTIFICACIONES A EL USUARIO INVOLUCRADO, si el administrador no esta involucrado no le llegara ninguna notificación.
