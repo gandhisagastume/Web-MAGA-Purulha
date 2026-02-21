@@ -27,8 +27,7 @@ SECRET_KEY = os.getenv('KEY_DJANGO')
 DEBUG = os.getenv('DEBUG', 'False').lower() in ('true', '1', 'yes')
 
 # Hosts permitidos (separados por coma en .env)
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',') if os.getenv('ALLOWED_HOSTS') else []
-
+ALLOWED_HOSTS = ['*']
 # Origenes confiables para CSRF (para HTTPS)
 CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',') if os.getenv('CSRF_TRUSTED_ORIGINS') else []
 
