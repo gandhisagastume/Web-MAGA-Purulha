@@ -2,6 +2,7 @@ from django.http import JsonResponse, HttpResponse
 from django.db import connection
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Count, Q, Sum, Avg, Max, Min, F, Prefetch, Subquery, OuterRef, IntegerField
 from django.db.models.functions import TruncMonth, TruncYear, Extract
 from django.core.files.storage import FileSystemStorage
@@ -14965,6 +14966,7 @@ DEFAULT_COMUNIDAD_IMAGE_LARGE = (
 # =====================================================
 
 @require_http_methods(["POST"])
+@csrf_exempt
 @api_ratelimit_login_smart(rate_per_user='10/3m', rate_per_ip='20/3m')
 def api_login(request):
     """

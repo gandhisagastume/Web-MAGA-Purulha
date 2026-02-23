@@ -101,52 +101,65 @@ def api_ratelimit_login_smart(rate_per_user='10/3m', rate_per_ip='20/3m'):
     
     Esto permite que múltiples usuarios se logueen desde la misma oficina/red
     sin bloquearse entre sí, mientras mantiene protección contra ataques.
+    
+    IMPORTANTE: Usa block=False para que podamos devolver respuesta JSON personalizada
+    en lugar del403 por defecto de django-ratelimit.
     """
     def decorator(view_func):
         @wraps(view_func)
         def wrapped_view(request, *args, **kwargs):
-            from django_ratelimit.decorators import ratelimit
             import json
+            from django_ratelimit.core import get_header
             
-            # Verificar límite por IP primero (más permisivo)
-            @ratelimit(key='ip', rate=rate_per_ip, method='POST', block=True)
-            def ip_limited(req):
-                # Si se excede el límite por IP
-                if getattr(req, 'limited', False):
-                    return JsonResponse({
-                        'success': False,
-                        'error': 'Demasiados intentos de login desde esta red. Por favor, espera un momento e intenta de nuevo.',
-                        'rate_limited': True
-                    }, status=429)
+            # Obtener la IP del request
+            ip = get_header(request, 'X-Forwarded-For')
+            if ip:
+                ip = ip.split(',')[0].strip()
+            else:
+                ip = request.META.get('REMOTE_ADDR', '0.0.0.0')
+            
+            # Verificar límite por IP usando cache directamente
+            from django.core.cache import cache
+            ip_cache_key = f'ratelimit:login_ip:{ip}'
+            ip_count = cache.get(ip_cache_key, 0)
+            
+            if ip_count >= 20:  # 20 intentos por IP cada 3 minutos
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Demasiados intentos de login desde esta red. Por favor, espera un momento e intenta de nuevo.',
+                    'rate_limited': True
+                }, status=429)
+            
+            # Verificar límite por usuario
+            try:
+                data = json.loads(request.body)
+                username = data.get('username', '').strip()
                 
-                # Verificar límite por usuario
-                try:
-                    data = json.loads(req.body)
-                    username = data.get('username', '').strip()
+                if username:
+                    user_cache_key = f'ratelimit:login_user:{username}'
+                    user_count = cache.get(user_cache_key, 0)
                     
-                    if username:
-                        @ratelimit(
-                            key=lambda r: f'login_user:{username}',
-                            rate=rate_per_user,
-                            method='POST',
-                            block=True
-                        )
-                        def user_limited(r):
-                            if getattr(r, 'limited', False):
-                                return JsonResponse({
-                                    'success': False,
-                                    'error': f'Demasiados intentos de login. Por favor, espera un momento e intenta de nuevo.',
-                                    'rate_limited': True
-                                }, status=429)
-                            return view_func(r, *args, **kwargs)
-                        
-                        return user_limited(req)
-                except:
-                    pass
-                
-                return view_func(req, *args, **kwargs)
+                    if user_count >= 10:  # 10 intentos por usuario cada 3 minutos
+                        return JsonResponse({
+                            'success': False,
+                            'error': 'Demasiados intentos de login para este usuario. Por favor, espera un momento e intenta de nuevo.',
+                            'rate_limited': True
+                        }, status=429)
+                    
+                    # Incrementar contador de usuario
+                    cache.set(user_cache_key, user_count + 1, 180)  # 3 minutos = 180 segundos
+            except json.JSONDecodeError:
+                pass
+            except Exception as e:
+                # Log del error pero no bloquear el login
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.warning(f"Error verificando rate limit por usuario: {e}")
             
-            return ip_limited(request)
+            # Incrementar contador de IP
+            cache.set(ip_cache_key, ip_count + 1, 180)  # 3 minutos = 180 segundos
+            
+            return view_func(request, *args, **kwargs)
         
         return wrapped_view
     return decorator

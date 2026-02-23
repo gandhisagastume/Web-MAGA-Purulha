@@ -2,7 +2,7 @@
 // Sistema Web-MAGA-Purulhá
 
 const DB_NAME = 'webmaga_offline';
-const DB_VERSION = 1;
+const DB_VERSION = 2; // Incrementado para actualizar el índice de regiones
 
 const STORES = {
   PROYECTOS: 'proyectos',
@@ -32,7 +32,8 @@ class OfflineDB {
 
       request.onupgradeneeded = (event) => {
         const db = event.target.result;
-        console.log('🔄 Actualizando IndexedDB...');
+        const oldVersion = event.oldVersion;
+        console.log(`🔄 Actualizando IndexedDB de versión ${oldVersion} a ${DB_VERSION}...`);
 
         // Store de Proyectos/Actividades
         if (!db.objectStoreNames.contains(STORES.PROYECTOS)) {
@@ -54,12 +55,18 @@ class OfflineDB {
           console.log('✅ Store de comunidades creado');
         }
 
-        // Store de Regiones
+        // Store de Regiones - Migraćión de versión 1 a 2: cambiar índice codigo a no único
+        if (db.objectStoreNames.contains(STORES.REGIONES) && oldVersion < 2) {
+          // Eliminar el store existente y recrearlo con el nuevo índice
+          console.log('🔄 Migrando store de regiones (índice codigo a no único)...');
+          db.deleteObjectStore(STORES.REGIONES);
+        }
+        
         if (!db.objectStoreNames.contains(STORES.REGIONES)) {
           const store = db.createObjectStore(STORES.REGIONES, { keyPath: 'id' });
-          store.createIndex('codigo', 'codigo', { unique: true });
+          store.createIndex('codigo', 'codigo', { unique: false }); // Cambiado a false para evitar errores de duplicados
           store.createIndex('ultimo_sync', 'ultimo_sync', { unique: false });
-          console.log('✅ Store de regiones creado');
+          console.log('✅ Store de regiones creado/actualizado');
         }
 
         // Store de Beneficiarios
