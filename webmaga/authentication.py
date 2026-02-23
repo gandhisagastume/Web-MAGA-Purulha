@@ -116,30 +116,42 @@ class UsuarioMAGABackend(BaseBackend):
         """
         Verifica la contraseña usando pgcrypto de PostgreSQL
         """
-        # Si tus contraseñas están hasheadas con Django (para compatibilidad)
-        if password_hash and (password_hash.startswith('pbkdf2_sha256') or password_hash.startswith('bcrypt$')):
-            return check_password(password_plain, password_hash)
+        import logging
+        logger = logging.getLogger(__name__)
         
-        # Si tus contraseñas están en texto plano (SOLO PARA DESARROLLO)
-        # ⚠️ NUNCA uses esto en producción
-        if password_plain == password_hash:
-            return True
+        # Si el hash está vacío, fallar inmediatamente
+        if not password_hash:
+            logger.warning("password_hash está vacío")
+            return False
+        
+        # Si tus contraseñas están hasheadas con Django (para compatibilidad)
+        if password_hash.startswith('pbkdf2_sha256') or password_hash.startswith('bcrypt$'):
+            result = check_password(password_plain, password_hash)
+            logger.debug(f"Verificación con Django hasher: {result}")
+            return result
         
         # Verificar con pgcrypto de PostgreSQL
         # Usa crypt() para validar el hash
         try:
             from django.db import connection
             with connection.cursor() as cursor:
+                # Usar parámetros correctamente para PostgreSQL
                 cursor.execute(
-                    "SELECT %s = crypt(%s, %s) AS password_match",
-                    [password_hash, password_plain, password_hash]
+                    "SELECT crypt(%s, %s) = %s AS password_match",
+                    [password_plain, password_hash, password_hash]
                 )
                 result = cursor.fetchone()
-                return result[0] if result else False
+                match = result[0] if result else False
+                logger.debug(f"Verificación con pgcrypto: {match}")
+                return match
         except Exception as e:
-            print(f"Error verificando contraseña con pgcrypto: {e}")
-            # Fallback: comparación directa (solo si es texto plano)
-            return password_plain == password_hash
+            logger.error(f"Error verificando contraseña con pgcrypto: {e}")
+            # Fallback: comparación directa (texto plano)
+            # Solo usar si el hash parece ser texto plano
+            if password_plain == password_hash:
+                logger.warning("Usando comparación de texto plano como fallback")
+                return True
+            return False
 
 
 def hash_password_for_maga(password, use_pgcrypto=True):

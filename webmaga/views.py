@@ -14984,7 +14984,10 @@ def api_login(request):
         remember_me = data.get('remember_me', False)
         device_id = data.get('device_id', '')
         
+        logger.info(f"[LOGIN] Intento de login para: {username_or_email}")
+        
         if not username_or_email or not password:
+            logger.warning(f"[LOGIN] Faltan credenciales")
             return JsonResponse({
                 'success': False,
                 'error': 'Usuario y contraseña son requeridos'
@@ -14992,16 +14995,20 @@ def api_login(request):
         
         # Intentar autenticar
         user = authenticate(request, username=username_or_email, password=password)
+        logger.info(f"[LOGIN] Resultado authenticate con username: {user is not None}")
         
         # Si falla con username, intentar con email
         if not user:
             try:
                 usuario_maga = Usuario.objects.get(email=username_or_email)
+                logger.info(f"[LOGIN] Usuario encontrado por email: {usuario_maga.username}")
                 user = authenticate(request, username=usuario_maga.username, password=password)
+                logger.info(f"[LOGIN] Resultado authenticate con email: {user is not None}")
             except Usuario.DoesNotExist:
-                pass
+                logger.warning(f"[LOGIN] Usuario no encontrado por email: {username_or_email}")
         
         if not user:
+            logger.warning(f"[LOGIN] Autenticación fallida para: {username_or_email}")
             return JsonResponse({
                 'success': False,
                 'error': 'Usuario o contraseña incorrectos'
