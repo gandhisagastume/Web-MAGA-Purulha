@@ -583,9 +583,8 @@ def obtener_cambios_evento(evento):
 
     cambios_data.sort(key=lambda item: item['fecha_cambio'] or '', reverse=True)
     print(f'BOX Total de cambios agrupados retornados: {len(cambios_data)} (de {cambios_total} totales)')
-    # Retornar solo los primeros 50 grupos de cambios (más recientes)
     # Ya están ordenados por fecha_cambio descendente
-    return cambios_data[:MAX_CAMBIOS_VISTA]
+    return cambios_data
 
 
 def obtener_portada_evento(evento):
