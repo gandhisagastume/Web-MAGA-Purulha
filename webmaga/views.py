@@ -6993,31 +6993,24 @@ def api_ultimos_proyectos(request):
         proyectos_data = []
         for evento in eventos:
             try:
-                # Obtener la primera evidencia como imagen principal - usar datos precargados
-                primera_evidencia = None
-                for evidencia in evento.evidencias.all():
-                    if evidencia.es_imagen and evidencia.url_almacenamiento:
-                        primera_evidencia = evidencia
-                        break
-                
-                imagen_url = None
-                if primera_evidencia and primera_evidencia.url_almacenamiento:
-                    try:
-                        imagen_url = primera_evidencia.url_almacenamiento
-                    except:
-                        imagen_url = None
-                
+                # Usar el helper central para obtener imagen: primero portada, luego primera evidencia-imagen.
+                # Esto permite que capacitaciones (que no tienen ActividadPortada) muestren su primera foto.
+                imagen_url = obtener_url_portada_o_evidencia(evento)
+
                 # Convertir fecha a zona horaria local
+                # Priorizar actualizado_en/creado_en (fechas reales de auditoría) sobre evento.fecha (planeada).
                 try:
-                    if evento.fecha:
-                        fecha_obj = evento.fecha
-                    elif evento.actualizado_en:
+                    if evento.actualizado_en:
                         fecha_obj = evento.actualizado_en.date() if hasattr(evento.actualizado_en, 'date') else evento.actualizado_en
-                    else:
+                    elif evento.creado_en:
                         fecha_obj = evento.creado_en.date() if hasattr(evento.creado_en, 'date') else evento.creado_en
+                    elif evento.fecha:
+                        fecha_obj = evento.fecha
+                    else:
+                        fecha_obj = None
                 except:
                     fecha_obj = None
-                
+
                 # Construir ubicación de forma segura
                 ubicacion = 'Sin ubicación'
                 if evento.comunidad:
@@ -7025,7 +7018,7 @@ def api_ultimos_proyectos(request):
                         ubicacion = f"{evento.comunidad.nombre}, {evento.comunidad.region.nombre}"
                     else:
                         ubicacion = evento.comunidad.nombre
-                
+
                 # OPTIMIZACIÓN: Usar conteo precalculado con annotate en lugar de .count()
                 try:
                     personal_count = evento.personal_count  # Usar conteo precalculado
@@ -7042,7 +7035,7 @@ def api_ultimos_proyectos(request):
                 except:
                     personal_count = 0
                     personal_nombres = []
-                
+
                 proyectos_data.append({
                     'id': str(evento.id),
                     'nombre': evento.nombre or 'Sin nombre',

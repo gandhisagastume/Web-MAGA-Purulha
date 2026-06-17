@@ -21,6 +21,11 @@ window.addEventListener('error', function(event) {
 
 // También manejar errores de recursos no cargados
 window.addEventListener('unhandledrejection', function(event) {
+  // Red de seguridad: si un rechazo de promesa no controlado deja un modal
+  // abierto, cerrarlo para no bloquear la UI completa.
+  if (typeof closeAllModals === 'function') {
+    try { closeAllModals(); } catch (e) { /* noop */ }
+  }
   // Suprimir errores de carga de imágenes cuando está offline
   if (!navigator.onLine && event.reason && typeof event.reason === 'object') {
     const message = event.reason.message || String(event.reason);
@@ -991,8 +996,15 @@ function crearTarjetaProyecto(proyecto) {
   card.className = 'project-card';
 
   // Extraer mes, día y año de la fecha (parseo local para evitar desfase UTC)
-
-  const fecha = parseLocalDate(proyecto.fecha || proyecto.createdDate);
+  // Priorizar las fechas reales de auditoría (creado_en / actualizado_en) sobre
+  // la fecha planeada del proyecto, que a veces está mal digitada.
+  const fecha = parseLocalDate(
+    proyecto.actualizado_en ||
+    proyecto.modifiedDate ||
+    proyecto.creado_en ||
+    proyecto.createdDate ||
+    proyecto.fecha
+  );
 
   const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
@@ -1184,12 +1196,13 @@ function normalizeProjectForFeatured(proyecto) {
   }
 
   const fecha =
+    proyecto.actualizado_en ||
+    proyecto.modifiedDate ||
+    proyecto.creado_en ||
+    proyecto.createdDate ||
     proyecto.fecha ||
     proyecto.fecha_evento ||
     proyecto.fecha_inicio ||
-    proyecto.createdDate ||
-    proyecto.creado_en ||
-    proyecto.actualizado_en ||
     '';
 
   const fechaDisplay =
@@ -1298,23 +1311,21 @@ function crearTarjetaProyectoDestacado(proyecto) {
   card.className = 'project-card featured-card';
 
   // Manejar fecha de forma segura (parseo local para evitar desfase UTC)
-
+  // Priorizar las fechas reales de auditoría sobre la fecha planeada del proyecto.
   let fecha;
-
   try {
-
-    fecha = parseLocalDate(proyecto.fecha || proyecto.createdDate);
-
+    fecha = parseLocalDate(
+      proyecto.actualizado_en ||
+      proyecto.modifiedDate ||
+      proyecto.creado_en ||
+      proyecto.createdDate ||
+      proyecto.fecha
+    );
     if (isNaN(fecha.getTime())) {
-
       fecha = new Date();
-
     }
-
   } catch (e) {
-
     fecha = new Date();
-
   }
 
   const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
@@ -4355,6 +4366,12 @@ function showConfirmModal(message, onConfirm, onCancel = null) {
     }
     
     // Forzar habilitación de botones
+    // NOTA: Se eliminó el Object.defineProperty que redefinía la propiedad
+    // 'disabled' del DOM de forma persistente. Esto provocaba que cualquier
+    // intento posterior de hacer btn.disabled = true fuera ignorado, dejando
+    // al botón en estados visuales inconsistentes (mezcla de disabled=false
+    // con display:none) que en algunos navegadores bloqueaba la propagación
+    // de clicks. Ahora simplemente se hace un reset directo de estilos.
     if (confirmDeleteBtn) {
       confirmDeleteBtn.disabled = false;
       confirmDeleteBtn.style.pointerEvents = 'auto';
@@ -4363,14 +4380,8 @@ function showConfirmModal(message, onConfirm, onCancel = null) {
       confirmDeleteBtn.style.userSelect = 'auto';
       confirmDeleteBtn.removeAttribute('aria-disabled');
       confirmDeleteBtn.classList.remove('disabled', 'is-hidden-by-permissions');
-      // Prevenir que se deshabilite
-      Object.defineProperty(confirmDeleteBtn, 'disabled', {
-        get: () => false,
-        set: () => {}, // Ignorar intentos de deshabilitar
-        configurable: true
-      });
     }
-    
+
     if (cancelDeleteBtn) {
       cancelDeleteBtn.disabled = false;
       cancelDeleteBtn.style.pointerEvents = 'auto';
@@ -4379,12 +4390,6 @@ function showConfirmModal(message, onConfirm, onCancel = null) {
       cancelDeleteBtn.style.userSelect = 'auto';
       cancelDeleteBtn.removeAttribute('aria-disabled');
       cancelDeleteBtn.classList.remove('disabled', 'is-hidden-by-permissions');
-      // Prevenir que se deshabilite
-      Object.defineProperty(cancelDeleteBtn, 'disabled', {
-        get: () => false,
-        set: () => {}, // Ignorar intentos de deshabilitar
-        configurable: true
-      });
     }
     
     if (closeConfirmModal) {
@@ -4428,60 +4433,76 @@ function showConfirmModal(message, onConfirm, onCancel = null) {
   });
 }
 
+// Helper para detener el interval de protección del modal de confirmación.
+// Se llama SIEMPRE en finally para evitar que el interval quede huérfano
+// (lo que provocaba que la UI se sintiera lenta y los clicks no respondieran).
+function _stopConfirmModalProtection() {
+  if (confirmModalProtectionInterval) {
+    clearInterval(confirmModalProtectionInterval);
+    confirmModalProtectionInterval = null;
+  }
+}
+
+// Helper para reiniciar el interval tras un error (mantiene los botones
+// protegidos mientras el modal sigue abierto).
+function _restartConfirmModalProtection() {
+  _stopConfirmModalProtection();
+  const ensureButtonsEnabled = () => {
+    const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+    const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+    if (confirmDeleteBtn) confirmDeleteBtn.disabled = false;
+    if (cancelDeleteBtn) cancelDeleteBtn.disabled = false;
+  };
+  confirmModalProtectionInterval = setInterval(ensureButtonsEnabled, 100);
+  ensureButtonsEnabled();
+}
+
 // Función para ejecutar acción de confirmación
 async function executeConfirmAction(e) {
   if (e) {
     e.preventDefault();
     e.stopPropagation();
   }
-  
-  if (pendingConfirmAction && pendingConfirmAction.onConfirm) {
-    const action = pendingConfirmAction.onConfirm;
-    pendingConfirmAction = null;
-    
-    // Marcar que el modal ya no está abierto para la protección
-    isConfirmModalOpen = false;
-    
-    // Detener el intervalo de protección
-    if (confirmModalProtectionInterval) {
-      clearInterval(confirmModalProtectionInterval);
-      confirmModalProtectionInterval = null;
-    }
-    
-    // Ejecutar la acción y esperar a que termine (puede ser async)
-    try {
+
+  // Marcar que el modal ya no está abierto para la protección y limpiar
+  // el interval SIEMPRE (incluso si la acción lanza excepción) para evitar
+  // intervals huérfanos que bloqueen el ciclo de eventos del navegador.
+  isConfirmModalOpen = false;
+  let hadPendingAction = false;
+
+  try {
+    if (pendingConfirmAction && pendingConfirmAction.onConfirm) {
+      hadPendingAction = true;
+      const action = pendingConfirmAction.onConfirm;
+      pendingConfirmAction = null;
+
+      // Ejecutar la acción y esperar a que termine (puede ser async)
       const result = action();
-      // Si es una promesa, esperar a que termine
       if (result && typeof result.then === 'function') {
         await result;
       }
       // Cerrar el modal después de que la acción se complete exitosamente
       hideModal('confirmDeleteModal');
-    } catch (error) {
-      console.error('Error al ejecutar acción de confirmación:', error);
-      showErrorMessage(error.message || 'Error al ejecutar la acción. Por favor, intenta de nuevo.');
-      // Re-abrir el modal en caso de error para que el usuario pueda intentar de nuevo o cancelar
-      isConfirmModalOpen = true;
-      // Re-iniciar la protección
-      const ensureButtonsEnabled = () => {
-        const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
-        const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
-        if (confirmDeleteBtn) confirmDeleteBtn.disabled = false;
-        if (cancelDeleteBtn) cancelDeleteBtn.disabled = false;
-      };
-      confirmModalProtectionInterval = setInterval(ensureButtonsEnabled, 100);
-      ensureButtonsEnabled();
-      // NO cerrar el modal en caso de error para que el usuario pueda intentar de nuevo o cancelar
+    } else {
+      // Si no hay acción pendiente, solo cerrar el modal
+      hideModal('confirmDeleteModal');
     }
-  } else {
-    // Si no hay acción pendiente, solo cerrar el modal
-    isConfirmModalOpen = false;
-    if (confirmModalProtectionInterval) {
-      clearInterval(confirmModalProtectionInterval);
-      confirmModalProtectionInterval = null;
+  } catch (error) {
+    console.error('Error al ejecutar acción de confirmación:', error);
+    showErrorMessage(error.message || 'Error al ejecutar la acción. Por favor, intenta de nuevo.');
+    // Re-abrir el modal en caso de error para que el usuario pueda intentar de nuevo o cancelar
+    isConfirmModalOpen = true;
+    // Re-iniciar la protección para que los botones queden forzados a enabled
+    _restartConfirmModalProtection();
+  } finally {
+    // Solo limpiamos el interval si NO hubo error (en el catch ya se reinició).
+    if (!isConfirmModalOpen) {
+      _stopConfirmModalProtection();
     }
-    hideModal('confirmDeleteModal');
   }
+
+  // Suprimir warning de variable no usada
+  void hadPendingAction;
 }
 
 // Función para cancelar acción de confirmación
@@ -4490,20 +4511,35 @@ function cancelConfirmAction(e) {
     e.preventDefault();
     e.stopPropagation();
   }
-  
-  if (pendingConfirmAction && pendingConfirmAction.onCancel) {
-    pendingConfirmAction.onCancel();
-  }
-  pendingConfirmAction = null;
+
   isConfirmModalOpen = false;
-  
-  // Detener el intervalo de protección
-  if (confirmModalProtectionInterval) {
-    clearInterval(confirmModalProtectionInterval);
-    confirmModalProtectionInterval = null;
+
+  try {
+    if (pendingConfirmAction && pendingConfirmAction.onCancel) {
+      pendingConfirmAction.onCancel();
+    }
+    pendingConfirmAction = null;
+    hideModal('confirmDeleteModal');
+  } finally {
+    // SIEMPRE limpiar el interval, incluso si onCancel() lanza.
+    _stopConfirmModalProtection();
   }
-  
-  hideModal('confirmDeleteModal');
+}
+
+// Helper global para cerrar cualquier modal abierto. Se usa como red de
+// seguridad cuando un error no controlado deja un modal con .active y
+// pointer-events: auto, lo que bloquea TODA la página.
+function closeAllModals() {
+  try {
+    document.querySelectorAll('.modal.active').forEach((m) => m.classList.remove('active'));
+    document.body.style.overflow = '';
+  } catch (e) {
+    console.warn('No se pudieron cerrar todos los modales:', e);
+  }
+  // También limpiar interval de protección si quedó vivo.
+  if (typeof _stopConfirmModalProtection === 'function') {
+    _stopConfirmModalProtection();
+  }
 }
 
 // Función para actualizar el proyecto actual en tiempo real (similar a refreshCurrentCommunity)
@@ -7553,43 +7589,32 @@ function editarCambio(cambioId, cambio) {
   document.getElementById('changeDescription').value = cambio.descripcion || '';
 
   // Cargar fecha y hora del cambio si existe
-
   if (cambio.fecha_cambio) {
-
     const fechaCambio = new Date(cambio.fecha_cambio);
 
-    // Obtener fecha y hora en zona horaria local del navegador
-
-    const year = fechaCambio.getFullYear();
-
-    const month = String(fechaCambio.getMonth() + 1).padStart(2, '0');
-
-    const day = String(fechaCambio.getDate()).padStart(2, '0');
-
-    const hours = String(fechaCambio.getHours()).padStart(2, '0');
-
-    const minutes = String(fechaCambio.getMinutes()).padStart(2, '0');
+    // Usar métodos UTC para que la fecha/hora NO se desplace por la zona
+    // horaria del navegador (el backend devuelve un datetime en zona horaria
+    // de Guatemala, pero getDate()/getMonth() aplican la zona local del cliente,
+    // lo que podía hacer que un cambio guardado el 15/jun apareciera como 14/jun
+    // o 16/jun en el input al editarlo).
+    const year = fechaCambio.getUTCFullYear();
+    const month = String(fechaCambio.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(fechaCambio.getUTCDate()).padStart(2, '0');
+    const hours = String(fechaCambio.getUTCHours()).padStart(2, '0');
+    const minutes = String(fechaCambio.getUTCMinutes()).padStart(2, '0');
 
     // Formatear fecha para input type="date" (YYYY-MM-DD)
-
     const fechaStr = `${year}-${month}-${day}`;
 
     // Formatear hora para input type="time" (HH:MM)
-
     const horaStr = `${hours}:${minutes}`;
 
     document.getElementById('changeDate').value = fechaStr;
-
     document.getElementById('changeTime').value = horaStr;
-
   } else {
-
     // Si no hay fecha, limpiar los campos
-
     document.getElementById('changeDate').value = '';
-
     document.getElementById('changeTime').value = '';
-
   }
 
   // Cargar colaborador seleccionado si existe
@@ -7813,29 +7838,30 @@ async function addChangeToProject() {
     }
 
     // Agregar fecha y hora si se especificaron o indicar que se use la actual
-
     const useCurrentTimeCheckbox = document.getElementById('changeUseCurrentTime');
-
     const useCurrentTime = useCurrentTimeCheckbox ? useCurrentTimeCheckbox.checked : false;
 
     const fechaCambio = document.getElementById('changeDate').value;
-
-    const horaCambio = document.getElementById('changeTime').value;
+    let horaCambio = document.getElementById('changeTime').value;
 
     if (useCurrentTime) {
-
       formData.append('usar_fecha_actual', 'true');
-
-    } else if (fechaCambio && horaCambio) {
+    } else if (fechaCambio) {
+      // Si el usuario no digitó hora, usar la hora actual del navegador
+      // para que el backend NO tenga que hacer fallback a timezone.now() (que es
+      // la hora del servidor, no la que el usuario esperaba).
+      if (!horaCambio) {
+        const ahora = new Date();
+        horaCambio = `${String(ahora.getHours()).padStart(2, '0')}:${String(ahora.getMinutes()).padStart(2, '0')}`;
+        // Reflejar la hora en el input para que el usuario la vea
+        const timeInput = document.getElementById('changeTime');
+        if (timeInput) timeInput.value = horaCambio;
+      }
 
       // Combinar fecha y hora en formato ISO para enviar al servidor
-
       // El servidor interpretará esto como hora local y la convertirá a zona horaria de Guatemala
-
       const fechaHoraISO = `${fechaCambio}T${horaCambio}:00`;
-
       formData.append('fecha_cambio', fechaHoraISO);
-
     }
 
     // Enviar TODOS los colaboradores seleccionados como una lista JSON
@@ -8682,15 +8708,12 @@ document.addEventListener('DOMContentLoaded', function() {
   // Delegación de eventos para botones de modales (backup en caso de que los listeners directos fallen)
   document.body.addEventListener('click', function(e) {
     const target = e.target;
-    
-    // Verificar si es el botón de confirmar eliminación
-    if (target.id === 'confirmDeleteBtn' || target.closest('#confirmDeleteBtn')) {
-      e.preventDefault();
-      e.stopPropagation();
-      executeDeleteAction();
-      return;
-    }
-    
+
+    // NOTA: El handler para #confirmDeleteBtn se registra directamente sobre
+    // el botón más abajo (línea ~9762) en capture phase, así que NO hace
+    // falta delegación aquí (generaba doble ejecución y stopPropagation que
+    // bloqueaba la respuesta al click en algunos navegadores).
+
     // Verificar si es el botón de agregar imagen
     if (target.id === 'confirmImageBtn' || target.closest('#confirmImageBtn')) {
       e.preventDefault();
