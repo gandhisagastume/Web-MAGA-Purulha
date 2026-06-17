@@ -379,19 +379,16 @@ def obtener_cambios_evento(evento):
     if has_region:
         select_related_fields.append('region')
 
-    # OPTIMIZACIÓN: Limitar cambios a los 50 más recientes para vista de detalles
-    # Los cambios adicionales se cargan bajo demanda si es necesario
-    MAX_CAMBIOS_VISTA = 50
-    # NO usar prefetch_related('evidencias') aquí porque puede cachear evidencias eliminadas
-    # En su lugar, haremos consultas directas por cada cambio
+    # El usuario solicitó eliminar la limitación de número o paginación para poder ver y editar todos los cambios
+    # Se remueve MAX_CAMBIOS_VISTA = 50
     cambios_queryset = (
         EventoCambioColaborador.objects.filter(actividad=evento)
         .select_related(*select_related_fields)
         .order_by('-fecha_cambio', '-creado_en')
     )
     cambios_total = cambios_queryset.count()
-    # Obtener solo los primeros 50 cambios (después del slice ya no es QuerySet)
-    cambios = list(cambios_queryset[:MAX_CAMBIOS_VISTA])
+    # Obtener todos los cambios (sin limitación)
+    cambios = list(cambios_queryset)
     print(f'🔍 Total de cambios encontrados: {cambios_total} (mostrando {len(cambios)})')
     # Verificar si hay cambios con comunidades (solo si la columna existe)
     # Usar el queryset original antes del slice para filtrar

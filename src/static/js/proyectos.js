@@ -4104,9 +4104,13 @@ function showModal(modalId) {
 
     modal.classList.add('active');
 
-    document.body.style.overflow = 'hidden';
+    // Contador de modales abiertos: solo bloquear overflow si es el primero
+    const openModals = document.querySelectorAll('.modal.active').length;
+    if (openModals >= 1) {
+      document.body.style.overflow = 'hidden';
+    }
     
-    // PROTECCIÓN ESPECIAL para el modal de confirmación: asegurar que los botones estén habilitados
+    // PROTECCIÓN para el modal de confirmación: asegurar que los botones estén habilitados
     if (modalId === 'confirmDeleteModal') {
       const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
       const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
@@ -4127,8 +4131,6 @@ function showModal(modalId) {
       setTimeout(() => firstTextarea.focus(), 120);
     }
 
-  } else {
-
   }
 
 }
@@ -4143,7 +4145,12 @@ function hideModal(modalId) {
 
     modal.classList.remove('active');
 
-    document.body.style.overflow = '';
+    // Solo restaurar overflow si ya no hay ningún modal abierto
+    const remainingOpenModals = document.querySelectorAll('.modal.active').length;
+    if (remainingOpenModals === 0) {
+      document.body.style.overflow = '';
+    }
+
 
     // Si es el modal de confirmación, limpiar el estado
     if (modalId === 'confirmDeleteModal') {
@@ -6434,7 +6441,7 @@ async function updateProjectDescription() {
       }
       
       // Cerrar modal
-      closeModal('editDescriptionModal');
+      hideModal('editDescriptionModal'); // Corregido: closeModal no existe, se usa hideModal
       
       showSuccessMessage('Descripción guardada sin conexión. Se enviará automáticamente cuando vuelva el internet.');
       
@@ -10150,11 +10157,11 @@ document.addEventListener('DOMContentLoaded', function() {
   if (closeConfirmModal) {
     // Remover listeners anteriores para evitar duplicados
     closeConfirmModal.removeEventListener('click', cancelConfirmAction);
+    // Usar fase de bubbling normal (no capture) para no interferir con otros handlers
     closeConfirmModal.addEventListener('click', (e) => {
       e.preventDefault();
-      e.stopPropagation();
       cancelConfirmAction(e);
-    }, true); // Usar capture phase para asegurar que se ejecute primero
+    });
   }
 
   const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
@@ -10164,9 +10171,8 @@ document.addEventListener('DOMContentLoaded', function() {
     cancelDeleteBtn.removeEventListener('click', cancelConfirmAction);
     cancelDeleteBtn.addEventListener('click', (e) => {
       e.preventDefault();
-      e.stopPropagation();
       cancelConfirmAction(e);
-    }, true); // Usar capture phase para asegurar que se ejecute primero
+    });
   }
 
   const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
@@ -10177,9 +10183,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Usar la función unificada para confirmar acciones
     confirmDeleteBtn.addEventListener('click', (e) => {
       e.preventDefault();
-      e.stopPropagation();
       executeConfirmAction(e);
-    }, true); // Usar capture phase para asegurar que se ejecute primero
+    });
     // Asegurar que el botón esté habilitado
     confirmDeleteBtn.disabled = false;
     confirmDeleteBtn.style.pointerEvents = 'auto';
@@ -10274,28 +10279,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
   });
 
-  // Cerrar modales al hacer clic fuera
-
+  // Cerrar modales al hacer clic fuera (en el backdrop del modal)
   document.addEventListener('click', function(e) {
-
-    if (e.target.classList.contains('modal')) {
-
+    // Solo activar si el click cayó directamente sobre el overlay del modal (no en su contenido)
+    if (e.target.classList.contains('modal') && e.target.classList.contains('active')) {
       const modalId = e.target.id;
-
       if (modalId) {
-
+        // Usar hideModal para hacer limpieza completa (overflow, estado, etc.)
         hideModal(modalId);
-
       } else {
-
+        // Fallback: remover clase active y verificar si quedan modales abiertos
         e.target.classList.remove('active');
-
-        document.body.style.overflow = '';
-
+        const remainingOpenModals = document.querySelectorAll('.modal.active').length;
+        if (remainingOpenModals === 0) {
+          document.body.style.overflow = '';
+        }
       }
-
     }
-
   });
 
 });
