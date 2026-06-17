@@ -5113,7 +5113,35 @@ async function renderCambios(cambios) {
     }
   }
 
+  // Agrupar cambios por mes-año con un separador visual.
+  // Se asume que el backend ya ordena por fecha_cambio descendente.
+  const monthFormatter = new Intl.DateTimeFormat('es-GT', { month: 'long', year: 'numeric' });
+  let currentMonthKey = null;
+
   for (const cambio of cambios) {
+    // Insertar separador de mes cuando cambia el grupo mes-año
+    try {
+      const iso = cambio.fecha_cambio ? String(cambio.fecha_cambio) : '';
+      const dateMatch = iso.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (dateMatch) {
+        const monthKey = `${dateMatch[1]}-${dateMatch[2]}`;
+        if (monthKey !== currentMonthKey) {
+          currentMonthKey = monthKey;
+          // Crear fecha local con año/mes/dia del string para formatear el nombre del mes
+          const year = parseInt(dateMatch[1], 10);
+          const monthIndex = parseInt(dateMatch[2], 10) - 1;
+          const labelDate = new Date(year, monthIndex, 1);
+          const monthLabel = monthFormatter.format(labelDate);
+          const monthHeader = document.createElement('div');
+          monthHeader.className = 'changes-month-header';
+          monthHeader.textContent = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
+          container.appendChild(monthHeader);
+        }
+      }
+    } catch (e) {
+      // Si no se puede parsear la fecha, simplemente no se muestra el separador
+    }
+
     // Obtener el texto de comunidades
     let comunidadesTexto = '';
     if (cambio.comunidades && typeof cambio.comunidades === 'string' && cambio.comunidades.trim() !== '') {
@@ -7590,27 +7618,27 @@ function editarCambio(cambioId, cambio) {
 
   // Cargar fecha y hora del cambio si existe
   if (cambio.fecha_cambio) {
-    const fechaCambio = new Date(cambio.fecha_cambio);
-
-    // Usar métodos UTC para que la fecha/hora NO se desplace por la zona
-    // horaria del navegador (el backend devuelve un datetime en zona horaria
-    // de Guatemala, pero getDate()/getMonth() aplican la zona local del cliente,
-    // lo que podía hacer que un cambio guardado el 15/jun apareciera como 14/jun
-    // o 16/jun en el input al editarlo).
-    const year = fechaCambio.getUTCFullYear();
-    const month = String(fechaCambio.getUTCMonth() + 1).padStart(2, '0');
-    const day = String(fechaCambio.getUTCDate()).padStart(2, '0');
-    const hours = String(fechaCambio.getUTCHours()).padStart(2, '0');
-    const minutes = String(fechaCambio.getUTCMinutes()).padStart(2, '0');
-
-    // Formatear fecha para input type="date" (YYYY-MM-DD)
-    const fechaStr = `${year}-${month}-${day}`;
-
-    // Formatear hora para input type="time" (HH:MM)
-    const horaStr = `${hours}:${minutes}`;
-
-    document.getElementById('changeDate').value = fechaStr;
-    document.getElementById('changeTime').value = horaStr;
+    // Extraer fecha y hora directamente del string ISO sin convertir zonas horarias.
+    // El backend almacena en zona horaria de Guatemala; si usamos new Date().getHours()
+    // aplicamos la zona local del navegador, lo que puede desplazar fecha/hora.
+    // Ejemplos de formato recibido: "2026-06-15T22:00:00-06:00" o "2026-06-15T22:00:00Z".
+    const iso = String(cambio.fecha_cambio);
+    const match = iso.match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/);
+    if (match) {
+      const [, year, month, day, hours, minutes] = match;
+      document.getElementById('changeDate').value = `${year}-${month}-${day}`;
+      document.getElementById('changeTime').value = `${hours}:${minutes}`;
+    } else {
+      // Fallback por si el formato no es el esperado
+      const fechaCambio = new Date(iso);
+      const year = fechaCambio.getUTCFullYear();
+      const month = String(fechaCambio.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(fechaCambio.getUTCDate()).padStart(2, '0');
+      const hours = String(fechaCambio.getUTCHours()).padStart(2, '0');
+      const minutes = String(fechaCambio.getUTCMinutes()).padStart(2, '0');
+      document.getElementById('changeDate').value = `${year}-${month}-${day}`;
+      document.getElementById('changeTime').value = `${hours}:${minutes}`;
+    }
   } else {
     // Si no hay fecha, limpiar los campos
     document.getElementById('changeDate').value = '';
@@ -7935,8 +7963,14 @@ async function addChangeToProject() {
         let fechaCambio = null;
         if (useCurrentTime) {
           fechaCambio = new Date().toISOString();
-        } else if (fechaCambioInput && horaCambioInput) {
-          fechaCambio = `${fechaCambioInput}T${horaCambioInput}:00`;
+        } else if (fechaCambioInput) {
+          // Si falta hora, usar hora actual del navegador (mismo comportamiento que online)
+          let horaOffline = horaCambioInput;
+          if (!horaOffline) {
+            const ahora = new Date();
+            horaOffline = `${String(ahora.getHours()).padStart(2, '0')}:${String(ahora.getMinutes()).padStart(2, '0')}`;
+          }
+          fechaCambio = `${fechaCambioInput}T${horaOffline}:00`;
         } else {
           fechaCambio = new Date().toISOString();
         }
@@ -8105,8 +8139,13 @@ async function addChangeToProject() {
             }
             if (useCurrentTime) {
               fieldsArray.push({ key: 'usar_fecha_actual', value: 'true' });
-            } else if (fechaCambio && horaCambio) {
-              fieldsArray.push({ key: 'fecha_cambio', value: `${fechaCambio}T${horaCambio}:00` });
+            } else if (fechaCambio) {
+              let horaSync = horaCambio;
+              if (!horaSync) {
+                const ahora = new Date();
+                horaSync = `${String(ahora.getHours()).padStart(2, '0')}:${String(ahora.getMinutes()).padStart(2, '0')}`;
+              }
+              fieldsArray.push({ key: 'fecha_cambio', value: `${fechaCambio}T${horaSync}:00` });
             }
             if (colaboradoresIds.length > 0) {
               fieldsArray.push({ key: 'colaboradores_ids', value: JSON.stringify(colaboradoresIds) });

@@ -2004,6 +2004,32 @@ input#projectSearchInput[type="text"] {
   scrollbar-color: rgba(59, 130, 246, 0.35) rgba(148, 163, 184, 0.15);
 }
 
+.changes-month-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 24px 0 4px;
+  padding: 10px 0;
+  color: var(--text-secondary, #94a3b8);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.changes-month-header:first-child {
+  margin-top: 0;
+}
+
+.changes-month-header::before,
+.changes-month-header::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(148, 163, 184, 0.15);
+}
+
 .change-item {
   display: flex;
   gap: 15px;
