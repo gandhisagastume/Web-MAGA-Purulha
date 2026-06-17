@@ -165,7 +165,7 @@ def aplicar_modificaciones_beneficiarios(beneficiarios_modificados):
         try:
             beneficiario = Beneficiario.objects.get(id=benef_id)
         except Beneficiario.DoesNotExist:
-            print(f"⚠️ Beneficiario {benef_id} no encontrado")
+            print(f"WARNING Beneficiario {benef_id} no encontrado")
             continue
 
         tipo = benef_data.get('tipo')
@@ -192,7 +192,7 @@ def aplicar_modificaciones_beneficiarios(beneficiarios_modificados):
                 benef_ind.save()
                 cambios_aplicados += 1
                 print(
-                    f"✅ Beneficiario individual actualizado: {benef_ind.nombre} {benef_ind.apellido}"
+                    f"OK Beneficiario individual actualizado: {benef_ind.nombre} {benef_ind.apellido}"
                 )
 
             elif tipo == 'familia':
@@ -217,7 +217,7 @@ def aplicar_modificaciones_beneficiarios(beneficiarios_modificados):
                 benef_fam.numero_miembros = benef_data.get('numero_miembros')
                 benef_fam.save()
                 cambios_aplicados += 1
-                print(f"✅ Beneficiario familia actualizado: {benef_fam.nombre_familia}")
+                print(f"OK Beneficiario familia actualizado: {benef_fam.nombre_familia}")
 
             elif tipo in ('institucion', 'institución'):
                 benef_inst = BeneficiarioInstitucion.objects.get(beneficiario=beneficiario)
@@ -249,7 +249,7 @@ def aplicar_modificaciones_beneficiarios(beneficiarios_modificados):
                 )
                 benef_inst.save()
                 cambios_aplicados += 1
-                print(f"✅ Beneficiario institución actualizado: {benef_inst.nombre_institucion}")
+                print(f"OK Beneficiario institución actualizado: {benef_inst.nombre_institucion}")
 
             elif tipo == 'otro':
                 benef_inst = BeneficiarioInstitucion.objects.get(beneficiario=beneficiario)
@@ -260,14 +260,14 @@ def aplicar_modificaciones_beneficiarios(beneficiarios_modificados):
                 benef_inst.email = benef_data.get('tipo_descripcion')
                 benef_inst.save()
                 cambios_aplicados += 1
-                print(f"✅ Beneficiario tipo 'otro' actualizado: {benef_inst.nombre_institucion}")
+                print(f"OK Beneficiario tipo 'otro' actualizado: {benef_inst.nombre_institucion}")
 
         except (
             BeneficiarioIndividual.DoesNotExist,
             BeneficiarioFamilia.DoesNotExist,
             BeneficiarioInstitucion.DoesNotExist,
         ):
-            print(f"⚠️ No se encontró el registro específico para el beneficiario {benef_id}")
+            print(f"WARNING No se encontró el registro específico para el beneficiario {benef_id}")
             continue
 
         comunidad_id_nueva = benef_data.get('comunidad_id')
@@ -331,7 +331,7 @@ def obtener_tarjetas_datos(evento):
     for tarjeta in qs:
         tarjeta_id = str(tarjeta.id)
         if tarjeta_id in ids_vistos:
-            print(f'⚠️ Tarjeta duplicada detectada en BD: {tarjeta.titulo} (ID: {tarjeta_id})')
+            print(f'WARNING Tarjeta duplicada detectada en BD: {tarjeta.titulo} (ID: {tarjeta_id})')
             continue
 
         ids_vistos.add(tarjeta_id)
@@ -351,7 +351,7 @@ def obtener_tarjetas_datos(evento):
 
 def obtener_cambios_evento(evento):
     """Obtiene los cambios realizados en un evento agrupados por grupo (varios colaboradores)."""
-    print(f'🔍 Buscando cambios (colaboradores) para evento {evento.id} - {evento.nombre}')
+    print(f'SEARCH Buscando cambios (colaboradores) para evento {evento.id} - {evento.nombre}')
 
     # Verificar si las columnas comunidad_id y region_id existen en la tabla
     from django.db import connection
@@ -368,7 +368,7 @@ def obtener_cambios_evento(evento):
             has_region = 'region_id' in existing_columns
     except Exception as e:
         # Si hay un error al verificar, asumir que las columnas no existen
-        print(f'⚠️ Error al verificar columnas: {e}')
+        print(f'WARNING Error al verificar columnas: {e}')
         has_comunidad = False
         has_region = False
 
@@ -389,19 +389,19 @@ def obtener_cambios_evento(evento):
     cambios_total = cambios_queryset.count()
     # Obtener todos los cambios (sin limitación)
     cambios = list(cambios_queryset)
-    print(f'🔍 Total de cambios encontrados: {cambios_total} (mostrando {len(cambios)})')
+    print(f'SEARCH Total de cambios encontrados: {cambios_total} (mostrando {len(cambios)})')
     # Verificar si hay cambios con comunidades (solo si la columna existe)
     # Usar el queryset original antes del slice para filtrar
     if has_comunidad:
         try:
             cambios_con_comunidad_queryset = cambios_queryset.exclude(comunidad__isnull=True)
             cambios_con_comunidad_total = cambios_con_comunidad_queryset.count()
-            print(f'🔍 Cambios con comunidad: {cambios_con_comunidad_total}')
+            print(f'SEARCH Cambios con comunidad: {cambios_con_comunidad_total}')
             for cambio_temp in cambios[:5]:  # Solo los primeros 5 para no saturar logs
                 if getattr(cambio_temp, 'comunidad_id', None):
                     print(f'  - Cambio {cambio_temp.id}: comunidad_id={cambio_temp.comunidad_id}, comunidad={getattr(cambio_temp, "comunidad", None)}')
         except Exception as e:
-            print(f'⚠️ Error al filtrar por comunidad: {e}')
+            print(f'WARNING Error al filtrar por comunidad: {e}')
 
     cambios_por_grupo = {}
     
@@ -422,7 +422,7 @@ def obtener_cambios_evento(evento):
             actividad=evento,
             grupo_id=grupo_uuid
         ).values_list('id', flat=True))
-        print(f'🔍 Grupo {grupo_clave}: Cambios del grupo: {cambios_del_grupo}')
+        print(f'SEARCH Grupo {grupo_clave}: Cambios del grupo: {cambios_del_grupo}')
         
         # Obtener todas las evidencias de todos los cambios del grupo
         # Usar un diccionario para evitar duplicados por ID (más compatible con todas las bases de datos)
@@ -436,7 +436,7 @@ def obtener_cambios_evento(evento):
                 cambio_id__in=cambios_del_grupo
             ).order_by('creado_en')
             
-            print(f'📎 Grupo {grupo_clave}: Evidencias encontradas en BD: {evidencias_qs.count()}')
+            print(f'ATTACH Grupo {grupo_clave}: Evidencias encontradas en BD: {evidencias_qs.count()}')
             
             # Agregar al diccionario usando ID como clave para asegurar unicidad
             # También verificar si ya existe una evidencia con la misma URL (mismo archivo físico)
@@ -446,19 +446,19 @@ def obtener_cambios_evento(evento):
                 
                 # Verificar si ya existe una evidencia con la misma URL (mismo archivo físico)
                 if evidencia_url in evidencias_por_url:
-                    print(f'  ⚠️ Evidencia {evidencia.id} ({evidencia.archivo_nombre}) con URL duplicada - omitida (ya existe evidencia {evidencias_por_url[evidencia_url].id})')
+                    print(f'  WARNING Evidencia {evidencia.id} ({evidencia.archivo_nombre}) con URL duplicada - omitida (ya existe evidencia {evidencias_por_url[evidencia_url].id})')
                     continue
                 
                 # Solo agregar si no existe ya por ID (evita duplicados por seguridad)
                 if evidencia_key not in evidencias_temp:
                     evidencias_temp[evidencia_key] = evidencia
                     evidencias_por_url[evidencia_url] = evidencia
-                    print(f'  ✅ Evidencia {evidencia.id} ({evidencia.archivo_nombre}) agregada al grupo {grupo_clave}')
+                    print(f'  OK Evidencia {evidencia.id} ({evidencia.archivo_nombre}) agregada al grupo {grupo_clave}')
                 else:
-                    print(f'  ⚠️ Evidencia {evidencia.id} ({evidencia.archivo_nombre}) ya existe en el grupo {grupo_clave} por ID - omitida')
+                    print(f'  WARNING Evidencia {evidencia.id} ({evidencia.archivo_nombre}) ya existe en el grupo {grupo_clave} por ID - omitida')
         
         evidencias_por_grupo[grupo_clave] = list(evidencias_temp.values())
-        print(f'📦 Grupo {grupo_clave}: Total de evidencias únicas (por ID y URL): {len(evidencias_por_grupo[grupo_clave])}')
+        print(f'BOX Grupo {grupo_clave}: Total de evidencias únicas (por ID y URL): {len(evidencias_por_grupo[grupo_clave])}')
 
     for cambio in cambios:
         grupo_uuid = getattr(cambio, 'grupo_id', None) or cambio.id
@@ -481,7 +481,7 @@ def obtener_cambios_evento(evento):
 
             # Obtener evidencias del grupo (ya pre-cargadas y sin duplicados)
             evidencias_lista = evidencias_por_grupo.get(grupo_clave, [])
-            print(f'📎 Evidencias encontradas para grupo {grupo_clave}: {len(evidencias_lista)}')
+            print(f'ATTACH Evidencias encontradas para grupo {grupo_clave}: {len(evidencias_lista)}')
             
             # Preparar evidencias como diccionario usando ID como clave
             evidencias_dict_inicial = {}
@@ -532,7 +532,7 @@ def obtener_cambios_evento(evento):
         # Leer directamente desde comunidad_id de la tabla eventos_cambios_colaboradores
         try:
             comunidad_id = getattr(cambio, 'comunidad_id', None)
-            print(f'🔍 Cambio {cambio.id}: comunidad_id={comunidad_id}, comunidad={getattr(cambio, "comunidad", None)}')
+            print(f'SEARCH Cambio {cambio.id}: comunidad_id={comunidad_id}, comunidad={getattr(cambio, "comunidad", None)}')
             
             if comunidad_id:
                 # Si tenemos el ID pero no el objeto, obtenerlo
@@ -542,20 +542,20 @@ def obtener_cambios_evento(evento):
                     try:
                         cambio_comunidad = Comunidad.objects.get(id=comunidad_id)
                     except Comunidad.DoesNotExist:
-                        print(f'⚠️ Comunidad con ID {comunidad_id} no encontrada en la BD')
+                        print(f'WARNING Comunidad con ID {comunidad_id} no encontrada en la BD')
                         cambio_comunidad = None
                 
                 if cambio_comunidad:
                     comunidad_nombre = cambio_comunidad.nombre
-                    print(f'✅ Comunidad encontrada: {comunidad_nombre} (ID: {comunidad_id})')
+                    print(f'OK Comunidad encontrada: {comunidad_nombre} (ID: {comunidad_id})')
                     if comunidad_nombre and comunidad_nombre not in grupo_data['comunidades']:
                         grupo_data['comunidades'].append(comunidad_nombre)
-                        print(f'✅ Comunidad agregada a la lista: {comunidad_nombre}')
+                        print(f'OK Comunidad agregada a la lista: {comunidad_nombre}')
                 else:
-                    print(f'⚠️ Cambio {cambio.id} NO tiene comunidad asociada (comunidad_id={comunidad_id})')
+                    print(f'WARNING Cambio {cambio.id} NO tiene comunidad asociada (comunidad_id={comunidad_id})')
         except Exception as e:
             # Si hay un error al acceder a la comunidad, simplemente ignorar
-            print(f'⚠️ Error al acceder a comunidad del cambio {cambio.id}: {e}')
+            print(f'WARNING Error al acceder a comunidad del cambio {cambio.id}: {e}')
 
     cambios_data = []
     for grupo in cambios_por_grupo.values():
@@ -574,15 +574,15 @@ def obtener_cambios_evento(evento):
         grupo['responsable_id'] = grupo['colaboradores_ids'][0] if grupo['colaboradores_ids'] else None
         # Convertir lista de comunidades a string separado por comas
         comunidades_lista = grupo['comunidades']
-        print(f'🔍 Grupo {grupo["grupo_id"]}: Lista de comunidades antes de convertir: {comunidades_lista}')
+        print(f'SEARCH Grupo {grupo["grupo_id"]}: Lista de comunidades antes de convertir: {comunidades_lista}')
         grupo['comunidades'] = ', '.join(comunidades_lista) if comunidades_lista else ''
-        print(f'🔍 Grupo {grupo["grupo_id"]}: String de comunidades después de convertir: "{grupo["comunidades"]}"')
-        print(f'📎 Grupo {grupo["grupo_id"]}: Total de evidencias en el grupo (antes de filtrado): {len(evidencias_lista)}, después de filtrado: {len(grupo["evidencias"])} (debe ser único por grupo)')
+        print(f'SEARCH Grupo {grupo["grupo_id"]}: String de comunidades después de convertir: "{grupo["comunidades"]}"')
+        print(f'ATTACH Grupo {grupo["grupo_id"]}: Total de evidencias en el grupo (antes de filtrado): {len(evidencias_lista)}, después de filtrado: {len(grupo["evidencias"])} (debe ser único por grupo)')
         cambios_data.append(grupo)
-        print(f'✅ Cambio agrupado agregado: {grupo["id"]} (grupo {grupo["grupo_id"]}) con {len(grupo["colaboradores_ids"])} colaborador(es) y {len(comunidades_lista)} comunidad(es) - String final: "{grupo["comunidades"]}"')
+        print(f'OK Cambio agrupado agregado: {grupo["id"]} (grupo {grupo["grupo_id"]}) con {len(grupo["colaboradores_ids"])} colaborador(es) y {len(comunidades_lista)} comunidad(es) - String final: "{grupo["comunidades"]}"')
 
     cambios_data.sort(key=lambda item: item['fecha_cambio'] or '', reverse=True)
-    print(f'📦 Total de cambios agrupados retornados: {len(cambios_data)} (de {cambios_total} totales)')
+    print(f'BOX Total de cambios agrupados retornados: {len(cambios_data)} (de {cambios_total} totales)')
     # Retornar solo los primeros 50 grupos de cambios (más recientes)
     # Ya están ordenados por fecha_cambio descendente
     return cambios_data[:MAX_CAMBIOS_VISTA]
@@ -620,7 +620,7 @@ def eliminar_portada_evento(portada_inst):
         try:
             os.remove(archivo_path)
         except Exception as error:
-            print(f"⚠️ No se pudo eliminar el archivo de portada: {error}")
+            print(f"WARNING No se pudo eliminar el archivo de portada: {error}")
 
     portada_inst.delete()
     return True

@@ -39,6 +39,6 @@ class WebmagaConfig(AppConfig):
             carpeta_path = os.path.join(media_root, carpeta)
             try:
                 os.makedirs(carpeta_path, exist_ok=True)
-                print(f"✅ Carpeta de media verificada/creada: {carpeta_path}")
+                print(f"OK Carpeta de media verificada/creada: {carpeta_path}")
             except Exception as e:
-                print(f"⚠️ Error al crear carpeta {carpeta_path}: {e}")
+                print(f"ERROR al crear carpeta {carpeta_path}: {e}")
