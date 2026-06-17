@@ -1755,7 +1755,7 @@ async function mostrarDetalleProyecto(proyecto) {
 
     // Mostrar la descripción como texto plano, preservando saltos de línea
 
-    detailDescription.innerHTML = `<p style="white-space: pre-wrap; color: #b8c5d1; line-height: 1.6;">${descripcionTexto.replace(/\n/g, '<br>')}</p>`;
+    detailDescription.innerHTML = `<p style="white-space: pre-wrap; color: var(--text-secondary); line-height: 1.6;">${descripcionTexto.replace(/\n/g, '<br>')}</p>`;
 
   }
 
@@ -1781,11 +1781,11 @@ async function mostrarDetalleProyecto(proyecto) {
 
             <div style="flex: 1;">
 
-              <h4 style="margin: 0 0 4px 0; color: #ffffff; font-size: 1.1rem;">${persona.nombre || persona.username || 'Sin nombre'}</h4>
+              <h4 style="margin: 0 0 4px 0; color: var(--text-primary); font-size: 1.1rem;">${persona.nombre || persona.username || 'Sin nombre'}</h4>
 
               <p style="margin: 4px 0; color: #007bff; font-weight: 500;">${persona.puesto || 'Sin puesto'}</p>
 
-              <p style="margin: 4px 0; color: #b8c5d1; font-size: 0.9rem;">Rol: ${persona.rol_display || persona.rol || 'Sin rol'}</p>
+              <p style="margin: 4px 0; color: var(--text-secondary); font-size: 0.9rem;">Rol: ${persona.rol_display || persona.rol || 'Sin rol'}</p>
 
             </div>
 
@@ -1876,9 +1876,9 @@ async function mostrarDetalleProyecto(proyecto) {
 
           <div class="data-content">
 
-            <h4 style="margin: 0 0 8px 0; color: #ffffff; font-size: 1rem; font-weight: 600;">${tarjeta.titulo}</h4>
+            <h4 style="margin: 0 0 8px 0; color: var(--text-primary); font-size: 1rem; font-weight: 600;">${tarjeta.titulo}</h4>
 
-            <p style="margin: 0; color: #b8c5d1; font-size: 0.9rem;">${valorMostrar}</p>
+            <p style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">${valorMostrar}</p>
 
           </div>
 
@@ -7335,11 +7335,11 @@ async function loadPersonnelListFromAPI() {
 
           <div style="flex: 1;">
 
-            <h4 style="margin: 0 0 4px 0; color: #ffffff; font-size: 1rem;">${colaborador.nombre || 'Sin nombre'}</h4>
+            <h4 style="margin: 0 0 4px 0; color: var(--text-primary); font-size: 1rem;">${colaborador.nombre || 'Sin nombre'}</h4>
 
             <p style="margin: 2px 0; color: #007bff; font-size: 0.9rem;">${colaborador.puesto || 'Sin puesto'}</p>
 
-            <p style="margin: 2px 0; color: #b8c5d1; font-size: 0.85rem;">${colaborador.rol_display || 'Colaborador'}</p>
+            <p style="margin: 2px 0; color: var(--text-secondary); font-size: 0.85rem;">${colaborador.rol_display || 'Colaborador'}</p>
 
             ${isSelected ? '<p style="margin: 4px 0 0 0; color: #ffc107; font-size: 0.8rem;">✓ Ya asignado</p>' : ''}
 
@@ -8734,11 +8734,11 @@ async function loadPersonnelListFromAPI() {
 
           <div style="flex: 1;">
 
-            <h4 style="margin: 0 0 4px 0; color: #ffffff; font-size: 1rem;">${colaborador.nombre || 'Sin nombre'}</h4>
+            <h4 style="margin: 0 0 4px 0; color: var(--text-primary); font-size: 1rem;">${colaborador.nombre || 'Sin nombre'}</h4>
 
             <p style="margin: 2px 0; color: #007bff; font-size: 0.9rem;">${colaborador.puesto || 'Sin puesto'}</p>
 
-            <p style="margin: 2px 0; color: #b8c5d1; font-size: 0.85rem;">${colaborador.rol_display || 'Colaborador'}</p>
+            <p style="margin: 2px 0; color: var(--text-secondary); font-size: 0.85rem;">${colaborador.rol_display || 'Colaborador'}</p>
 
             ${isSelected ? '<p style="margin: 4px 0 0 0; color: #ffc107; font-size: 0.8rem;">✓ Ya asignado</p>' : ''}
 
@@ -10723,11 +10723,11 @@ async function loadChangePersonnelList() {
 
         <div style="flex: 1;">
 
-          <h4 style="margin: 0 0 4px 0; color: #ffffff; font-size: 1rem;">${person.nombre || 'Sin nombre'}</h4>
+          <h4 style="margin: 0 0 4px 0; color: var(--text-primary); font-size: 1rem;">${person.nombre || 'Sin nombre'}</h4>
 
           <p style="margin: 2px 0; color: #007bff; font-size: 0.9rem;">${person.puesto || person.rol_display || 'Sin puesto'}</p>
 
-          <p style="margin: 2px 0; color: #b8c5d1; font-size: 0.85rem;">${person.rol_display || 'Colaborador'}</p>
+          <p style="margin: 2px 0; color: var(--text-secondary); font-size: 0.85rem;">${person.rol_display || 'Colaborador'}</p>
 
         </div>
 
@@ -10843,8 +10843,8 @@ async function loadChangeCommunitiesList() {
     communityItem.innerHTML = `
       <input type="checkbox" class="change-community-checkbox" id="${escapeHtml(checkboxId)}" value="${escapeHtml(checkboxValue)}" style="margin-right: 12px; width: 18px; height: 18px; cursor: pointer;">
       <div style="flex: 1;">
-        <h4 style="margin: 0 0 4px 0; color: #ffffff; font-size: 1rem;">${escapeHtml(comunidadNombre)}</h4>
-        <p style="margin: 2px 0; color: #b8c5d1; font-size: 0.85rem;">${escapeHtml(regionNombre)}</p>
+        <h4 style="margin: 0 0 4px 0; color: var(--text-primary); font-size: 1rem;">${escapeHtml(comunidadNombre)}</h4>
+        <p style="margin: 2px 0; color: var(--text-secondary); font-size: 0.85rem;">${escapeHtml(regionNombre)}</p>
       </div>
     `;
     
@@ -12636,7 +12636,7 @@ function showChangeDetailsModal(cambio) {
 
     const descripcionText = document.createElement('p');
 
-    descripcionText.style.cssText = 'color: #b8c5d1; font-size: 0.9rem; line-height: 1.6; margin: 0; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 6px; white-space: pre-wrap; word-wrap: break-word;';
+    descripcionText.style.cssText = 'color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6; margin: 0; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 6px; white-space: pre-wrap; word-wrap: break-word;';
 
     descripcionText.textContent = cambio.descripcion || 'Sin descripción';
 
@@ -12983,7 +12983,7 @@ function loadEvidences(evidences, puedeGestionar = false, permiteEliminar = fals
 
       <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
 
-        <label style="color: #b8c5d1; font-size: 0.85rem; display: block; margin-bottom: 6px;">Descripción:</label>
+        <label style="color: var(--text-secondary); font-size: 0.85rem; display: block; margin-bottom: 6px;">Descripción:</label>
 
         <p style="color: #fff; font-size: 0.9rem; margin: 0; padding: 8px; background: rgba(255,255,255,0.05); border-radius: 4px; white-space: pre-wrap; word-wrap: break-word; min-height: 40px;">${evidence.descripcion || '<span style="color: #6c757d; font-style: italic;">Sin descripción</span>'}</p>
 
@@ -13604,7 +13604,7 @@ function renderExistingEvidences(evidencias) {
 
       <div class="evidence-description-container" style="display: flex; flex-direction: column; gap: 4px;">
 
-        <label style="color: #b8c5d1; font-size: 0.85rem;">Descripción:</label>
+        <label style="color: var(--text-secondary); font-size: 0.85rem;">Descripción:</label>
 
         <textarea class="evidence-description-input-existing" data-evidence-id="${evidencia.id}" data-original-desc="${descripcionOriginalEscaped}" rows="2" placeholder="Agregar descripción..." style="width: 100%; padding: 8px; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; font-size: 0.9rem; resize: vertical; font-family: inherit;">${descripcionOriginal.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</textarea>
 
@@ -13738,7 +13738,7 @@ function renderEvidencesPreview() {
 
       <div class="evidence-description-container" style="display: flex; flex-direction: column; gap: 4px;">
 
-        <label style="color: #b8c5d1; font-size: 0.85rem;">Descripción (opcional):</label>
+        <label style="color: var(--text-secondary); font-size: 0.85rem;">Descripción (opcional):</label>
 
         <textarea class="evidence-description-input" data-file-id="${fileItem.id}" rows="2" placeholder="Agregar descripción para esta evidencia..." style="width: 100%; padding: 8px; border-radius: 4px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; font-size: 0.9rem; resize: vertical;">${fileItem.descripcion || ''}</textarea>
 
