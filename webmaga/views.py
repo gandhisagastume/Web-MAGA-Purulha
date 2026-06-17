@@ -8751,7 +8751,21 @@ def api_obtener_detalle_proyecto(request, evento_id):
         except:
             fecha_str = ''
             fecha_display = ''
-        
+
+        # Fecha de ultima modificacion para mostrar en el header del detalle
+        try:
+            if evento.actualizado_en:
+                from django.utils.timezone import localtime
+                actualizado_en_local = localtime(evento.actualizado_en)
+                actualizado_en_str = actualizado_en_local.strftime('%Y-%m-%d')
+                actualizado_en_formatted = actualizado_en_local.strftime('%d de %B de %Y')
+            else:
+                actualizado_en_str = ''
+                actualizado_en_formatted = ''
+        except:
+            actualizado_en_str = ''
+            actualizado_en_formatted = ''
+
         # Verificar permisos del usuario actual para este evento
         usuario_maga = get_usuario_maga(request.user) if request.user.is_authenticated else None
         puede_gestionar = False
@@ -8769,6 +8783,8 @@ def api_obtener_detalle_proyecto(request, evento_id):
             'region': evento.comunidad.region.nombre if evento.comunidad and evento.comunidad.region else None,
             'fecha': fecha_str,
             'fecha_display': fecha_display,
+            'actualizado_en': actualizado_en_str,
+            'actualizado_en_formatted': actualizado_en_formatted,
             'estado': evento.estado,
             'estado_display': evento.get_estado_display() if hasattr(evento, 'get_estado_display') else evento.estado,
             'responsable': (evento.responsable.nombre if evento.responsable.nombre else evento.responsable.username) if evento.responsable else 'Sin responsable',
@@ -8962,7 +8978,7 @@ def api_eliminar_imagen_galeria(request, evento_id, imagen_id):
             'success': True,
             'message': 'Imagen eliminada exitosamente'
         })
-        
+
     except Actividad.DoesNotExist:
         return JsonResponse({
             'success': False,
@@ -8975,6 +8991,102 @@ def api_eliminar_imagen_galeria(request, evento_id, imagen_id):
             'success': False,
             'error': f'Error al eliminar imagen: {str(e)}'
         }, status=500)
+
+
+@permiso_gestionar_eventos_api
+@require_http_methods(["POST"])
+def api_actualizar_descripcion_imagen_galeria(request, evento_id, imagen_id):
+    """API: Actualizar la descripcion de una imagen de galeria"""
+    try:
+        evento = Actividad.objects.get(id=evento_id, eliminado_en__isnull=True)
+        imagen = EventosGaleria.objects.get(id=imagen_id, actividad=evento)
+
+        usuario_maga = get_usuario_maga(request.user)
+        if not usuario_maga:
+            return JsonResponse({'success': False, 'error': 'Usuario no autenticado'}, status=401)
+
+        if not usuario_puede_gestionar_evento(usuario_maga, evento_id):
+            return JsonResponse({'success': False, 'error': 'No tienes permiso para editar este evento'}, status=403)
+
+        descripcion = request.POST.get('descripcion', '').strip()
+        imagen.descripcion = descripcion if descripcion else None
+        imagen.save(update_fields=['descripcion'])
+
+        evento.actualizado_en = timezone.now()
+        evento.save(update_fields=['actualizado_en'])
+
+        return JsonResponse({
+            'success': True,
+            'message': 'Descripcion actualizada exitosamente',
+            'imagen': {
+                'id': str(imagen.id),
+                'descripcion': imagen.descripcion or '',
+            }
+        })
+
+    except EventosGaleria.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Imagen no encontrada'}, status=404)
+    except Actividad.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Evento no encontrado'}, status=404)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'success': False, 'error': f'Error al actualizar descripcion: {str(e)}'}, status=500)
+
+
+@permiso_gestionar_eventos_api
+@require_http_methods(["POST"])
+def api_establecer_portada_desde_galeria(request, evento_id, imagen_id):
+    """API: Establecer una imagen de galeria como portada del evento"""
+    try:
+        evento = Actividad.objects.get(id=evento_id, eliminado_en__isnull=True)
+        imagen = EventosGaleria.objects.get(id=imagen_id, actividad=evento)
+
+        usuario_maga = get_usuario_maga(request.user)
+        if not usuario_maga:
+            return JsonResponse({'success': False, 'error': 'Usuario no autenticado'}, status=401)
+
+        if not usuario_puede_gestionar_evento(usuario_maga, evento_id):
+            return JsonResponse({'success': False, 'error': 'No tienes permiso para editar este evento'}, status=403)
+
+        if not imagen.url_almacenamiento:
+            return JsonResponse({'success': False, 'error': 'La imagen no tiene URL de almacenamiento'}, status=400)
+
+        portada_existente = ActividadPortada.objects.filter(actividad=evento).first()
+
+        portada, creada = ActividadPortada.objects.update_or_create(
+            actividad=evento,
+            defaults={
+                'archivo_nombre': imagen.archivo_nombre,
+                'archivo_tipo': imagen.archivo_tipo or '',
+                'url_almacenamiento': imagen.url_almacenamiento,
+            }
+        )
+
+        evento.actualizado_en = timezone.now()
+        evento.save(update_fields=['actualizado_en'])
+
+        return JsonResponse({
+            'success': True,
+            'message': 'Portada actualizada exitosamente',
+            'portada': {
+                'id': str(portada.id),
+                'url': portada.url_almacenamiento,
+                'nombre': portada.archivo_nombre,
+            },
+            'reemplazada': portada_existente is not None
+        })
+
+    except EventosGaleria.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Imagen no encontrada'}, status=404)
+    except Actividad.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Evento no encontrado'}, status=404)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'success': False, 'error': f'Error al establecer portada: {str(e)}'}, status=500)
+
+
 @permiso_gestionar_eventos
 @require_http_methods(["POST"])
 def api_agregar_archivo(request, evento_id):

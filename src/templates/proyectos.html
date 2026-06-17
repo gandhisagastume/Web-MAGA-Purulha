@@ -6,7 +6,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{% static 'css/styles.css' %}">
-  <link rel="stylesheet" href="{% static 'css/proyectos.css' %}?v=39">
+  <link rel="stylesheet" href="{% static 'css/proyectos.css' %}?v=40">
   <link rel="stylesheet" href="{% static 'css/login-modal.css' %}">
   <link rel="stylesheet" href="{% static 'css/gestioneseventos.css' %}">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -170,6 +170,14 @@
         <!-- Imagen Principal -->
         <div class="detail-main-image">
           <img id="detailMainImage" src="" alt="Imagen principal del proyecto" loading="lazy">
+          <button type="button" class="cover-expand-btn" id="coverExpandBtn" title="Ver imagen en grande" aria-label="Ver imagen en grande">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="15 3 21 3 21 9"></polyline>
+              <polyline points="9 21 3 21 3 15"></polyline>
+              <line x1="21" y1="3" x2="14" y2="10"></line>
+              <line x1="3" y1="21" x2="10" y2="14"></line>
+            </svg>
+          </button>
           <div class="image-status-badge" id="imageStatusBadge">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="12" cy="12" r="10"></circle>
@@ -193,15 +201,26 @@
         <div class="detail-gallery">
           <div class="section-header">
             <h3 class="gallery-title">Galería de Imágenes</h3>
-            {% if es_admin or es_personal %}
-            <button class="btn-edit-item" id="addImageBtn">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="12" y1="5" x2="12" y2="19"></line>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-              </svg>
-              Agregar Imagen
-            </button>
-            {% endif %}
+            <div class="gallery-header-actions">
+              <button class="btn-view-gallery-full" id="viewGalleryFullBtn" type="button">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="7" height="7"></rect>
+                  <rect x="14" y="3" width="7" height="7"></rect>
+                  <rect x="14" y="14" width="7" height="7"></rect>
+                  <rect x="3" y="14" width="7" height="7"></rect>
+                </svg>
+                Ver galería completa
+              </button>
+              {% if es_admin or es_personal %}
+              <button class="btn-edit-item" id="addImageBtn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Agregar Imagen
+              </button>
+              {% endif %}
+            </div>
           </div>
           <div class="gallery-grid" id="detailGallery">
             <!-- Las imágenes se cargarán dinámicamente -->
@@ -339,6 +358,23 @@
   <div id="imageViewModal" class="modal">
     <div class="modal-content" style="max-width: 90vw; max-height: 90vh; padding: 0; background: rgba(0, 0, 0, 0.95);">
       <div class="modal-header" style="position: absolute; top: 0; right: 0; z-index: 1000; background: transparent; padding: 15px;">
+        <div class="image-view-actions" id="imageViewActions">
+          <button type="button" class="btn-action-lightbox" id="btnEditImageDescription" title="Editar descripcion" style="display: none;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+            Editar descripcion
+          </button>
+          <button type="button" class="btn-action-lightbox" id="btnSetAsCover" title="Usar como portada" style="display: none;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <circle cx="8.5" cy="8.5" r="1.5"></circle>
+              <polyline points="21 15 16 10 5 21"></polyline>
+            </svg>
+            Usar como portada
+          </button>
+        </div>
         <button class="modal-close" id="closeImageViewModal" style="background: rgba(0, 0, 0, 0.7); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -346,11 +382,66 @@
           </svg>
         </button>
       </div>
+      <button type="button" class="lightbox-nav prev" id="lightboxPrevBtn" aria-label="Imagen anterior">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+      </button>
+      <button type="button" class="lightbox-nav next" id="lightboxNextBtn" aria-label="Imagen siguiente">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+      </button>
       <div class="modal-body" style="padding: 0; display: flex; align-items: center; justify-content: center; min-height: 70vh;">
         <img id="fullSizeImage" src="" alt="Imagen en tamaño completo" loading="eager" style="max-width: 100%; max-height: 90vh; object-fit: contain; display: block;">
       </div>
       <div class="modal-footer" style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0, 0, 0, 0.8); padding: 15px; text-align: center;">
         <p id="imageViewDescription" style="color: white; margin: 0; font-size: 0.95rem;"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Galeria Completa -->
+  <div id="galleryFullModal" class="modal gallery-full-modal">
+    <div class="modal-content gallery-full-content">
+      <div class="gallery-full-header">
+        <h3 class="gallery-full-title">Galeria completa</h3>
+        <button class="modal-close" id="closeGalleryFullModal">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="gallery-full-body">
+        <div class="gallery-full-masonry" id="galleryFullMasonry">
+          <!-- Las imagenes se cargaran dinamicamente -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para Editar Descripcion de Imagen de Galeria -->
+  <div id="editImageDescriptionModal" class="modal gallery-edit-description-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Editar descripcion de la foto</h3>
+        <button class="modal-close" id="closeEditImageDescriptionModal">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="editImageDescriptionText" class="form-label">Descripcion</label>
+          <textarea id="editImageDescriptionText" placeholder="Describe esta foto..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="cancelEditImageDescriptionBtn" class="btn-secondary">Cancelar</button>
+        <button type="button" id="confirmEditImageDescriptionBtn" class="btn-primary">Guardar</button>
       </div>
     </div>
   </div>
@@ -461,10 +552,21 @@
         </button>
       </div>
       <div class="modal-body">
+        <!-- Tarjetas Seleccionadas: siempre visibles arriba -->
+        <div class="selected-cards-section selected-cards-section-top">
+          <div class="selected-cards-section-header">
+            <h4 class="section-title">Tarjetas Seleccionadas</h4>
+            <span class="selected-cards-count" id="selectedCardsCount">0</span>
+          </div>
+          <div class="selected-cards-container" id="selectedCardsContainer">
+            <!-- Las tarjetas seleccionadas se mostrarán aquí -->
+          </div>
+        </div>
+
         <!-- Pestañas -->
         <div class="edit-data-tabs">
-          <button class="tab-btn active" data-tab="predefined">Tarjetas Predefinidas</button>
-          <button class="tab-btn" data-tab="custom">Crear Personalizada</button>
+          <button class="tab-btn active" data-tab="predefined" type="button">Tarjetas Predefinidas</button>
+          <button class="tab-btn" data-tab="custom" type="button">Crear Personalizada</button>
         </div>
 
         <!-- Pestaña de Tarjetas Predefinidas -->
@@ -472,7 +574,7 @@
           <div class="search-container">
             <input type="text" id="cardSearch" class="form-input" placeholder="Buscar tarjetas...">
           </div>
-          
+
           <div class="category-filter">
             <label for="categoryFilter" class="form-label">Filtrar por categoría:</label>
             <select id="categoryFilter" class="form-select">
@@ -512,14 +614,6 @@
           </div>
           <button type="button" id="addCustomCardBtn" class="btn-primary">Agregar Tarjeta Personalizada</button>
         </div>
-
-        <!-- Tarjetas Seleccionadas -->
-        <div class="selected-cards-section">
-          <h4 class="section-title">Tarjetas Seleccionadas</h4>
-          <div class="selected-cards-container" id="selectedCardsContainer">
-            <!-- Las tarjetas seleccionadas se mostrarán aquí -->
-          </div>
-        </div>
       </div>
       <div class="modal-footer">
         <button type="button" id="cancelDataBtn" class="btn-secondary">Cancelar</button>
@@ -528,11 +622,36 @@
     </div>
   </div>
 
+  <!-- Modal para Editar Valor de Tarjeta -->
+  <div id="editCardValueModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title" id="editCardValueTitle">Editar valor</h3>
+        <button class="modal-close" id="closeEditCardValueModal">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="editCardValueInput" class="form-label">Valor / Dato</label>
+          <input type="text" id="editCardValueInput" class="form-input" placeholder="Ingresa el valor...">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="cancelEditCardValueBtn" class="btn-secondary">Cancelar</button>
+        <button type="button" id="confirmEditCardValueBtn" class="btn-primary">Guardar</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal para Agregar Comunidad -->
   <div id="addCommunityModal" class="modal">
     <div class="modal-content">
       <div class="modal-header">
-        <h3 class="modal-title">Seleccionar Comunidad</h3>
+        <h3 class="modal-title">Seleccionar Comunidades</h3>
         <button class="modal-close" id="closeCommunityModal">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -542,9 +661,15 @@
       </div>
       <div class="modal-body">
         <div class="form-group">
-          <label class="form-label">Comunidades Disponibles</label>
+          <label class="form-label">Comunidades seleccionadas</label>
+          <div class="selected-communities-chips" id="selectedCommunitiesChips">
+            <p class="selected-communities-empty">No hay comunidades seleccionadas.</p>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Buscar y agregar comunidades</label>
           <div class="search-container">
-            <input type="text" id="communitySearch" class="form-input" placeholder="Buscar comunidad...">
+            <input type="text" id="communitySearch" class="form-input" placeholder="Escribe el nombre de una comunidad..." autocomplete="off">
           </div>
           <div class="communities-list" id="communitiesList">
             <!-- Las comunidades se cargarán dinámicamente -->
@@ -553,7 +678,7 @@
       </div>
       <div class="modal-footer">
         <button type="button" id="cancelCommunityBtn" class="btn-secondary">Cancelar</button>
-        <button type="button" id="confirmCommunityBtn" class="btn-primary">Agregar Seleccionadas</button>
+        <button type="button" id="confirmCommunityBtn" class="btn-primary">Guardar selección</button>
       </div>
     </div>
   </div>
@@ -901,5 +1026,5 @@
 {% endblock %}
 
 {% block extra_js %}
-  <script src="{% static 'js/proyectos.js' %}?v=58"></script>
+  <script src="{% static 'js/proyectos.js' %}?v=59"></script>
 {% endblock %}

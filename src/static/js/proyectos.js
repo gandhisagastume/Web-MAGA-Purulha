@@ -1709,7 +1709,7 @@ async function mostrarDetalleProyecto(proyecto) {
 
   if (detailLocation) detailLocation.textContent = proyecto.ubicacion;
 
-  if (detailDateText) detailDateText.textContent = proyecto.fecha_display || proyecto.fecha;
+  if (detailDateText) detailDateText.textContent = proyecto.actualizado_en_formatted || proyecto.actualizado_en || proyecto.fecha_display || proyecto.fecha;
 
   if (statusText) statusText.textContent = proyecto.estado_display || proyecto.estado;
 
@@ -3274,29 +3274,12 @@ let evidenciasAEliminar = [];
 
 // ======= DATOS FICTICIOS =======
 
-const availableCommunities = [
+// Comunidades disponibles para asociar a un proyecto (se cargan desde /api/comunidades/)
+let availableCommunities = [];
+let availableCommunitiesLoaded = false;
 
-  { id: 1, name: 'San José', region: 'Región Norte' },
-
-  { id: 2, name: 'Los Pinos', region: 'Región Norte' },
-
-  { id: 3, name: 'El Progreso', region: 'Región Norte' },
-
-  { id: 4, name: 'Centro Panchisivic', region: 'Región Sur' },
-
-  { id: 5, name: 'Eben-Ezer', region: 'Región Sur' },
-
-  { id: 6, name: 'Suquinay II', region: 'Región Sur' },
-
-  { id: 7, name: 'Los Ángeles', region: 'Región Este' },
-
-  { id: 8, name: 'El Chol', region: 'Región Este' },
-
-  { id: 9, name: 'San Antonio', region: 'Región Oeste' },
-
-  { id: 10, name: 'Las Flores', region: 'Región Oeste' }
-
-];
+// IDs de comunidades seleccionadas en el modal de comunidades
+let selectedCommunityIds = new Set();
 
 // ======= TARJETAS PREDEFINIDAS =======
 
@@ -5318,50 +5301,108 @@ async function renderCambios(cambios) {
 }
 // Función para mostrar modal de imagen en tamaño completo
 
+// Estado del lightbox de imagen
+let imageViewCurrentIndex = -1;
+let imageViewSourceImages = [];
+
 function showImageViewModal(imageUrl, imageDescription = '') {
-
-  const modal = document.getElementById('imageViewModal');
-
-  const fullSizeImage = document.getElementById('fullSizeImage');
-
-  const imageViewDescription = document.getElementById('imageViewDescription');
-
-  if (!modal || !fullSizeImage) {
-
-    return;
-
+  // Si tenemos galeria cargada, intentar encontrar el indice
+  if (Array.isArray(currentProjectGalleryImages) && currentProjectGalleryImages.length > 0) {
+    const foundIndex = currentProjectGalleryImages.findIndex(img => {
+      const imgUrl = img.url || (img.base64 ? `data:${img.tipo || 'image/jpeg'};base64,${img.base64}` : '');
+      return imgUrl === imageUrl;
+    });
+    if (foundIndex !== -1) {
+      openGalleryLightbox(foundIndex);
+      return;
+    }
   }
 
-  // Establecer la imagen y descripción
+  // Fallback: mostrar imagen aislada sin navegacion
+  imageViewCurrentIndex = -1;
+  imageViewSourceImages = [];
+  _renderImageView(imageUrl, imageDescription, false, false);
+}
+
+function openGalleryLightbox(startIndex) {
+  if (!Array.isArray(currentProjectGalleryImages) || currentProjectGalleryImages.length === 0) {
+    return;
+  }
+  if (startIndex < 0 || startIndex >= currentProjectGalleryImages.length) {
+    return;
+  }
+  imageViewSourceImages = currentProjectGalleryImages;
+  imageViewCurrentIndex = startIndex;
+  _updateImageViewFromCurrentIndex();
+}
+
+function _updateImageViewFromCurrentIndex() {
+  const img = imageViewSourceImages[imageViewCurrentIndex];
+  if (!img) return;
+  const imageUrl = img.url || (img.base64 ? `data:${img.tipo || 'image/jpeg'};base64,${img.base64}` : '');
+  const imageDescription = img.descripcion || '';
+  const hasPrev = imageViewCurrentIndex > 0;
+  const hasNext = imageViewCurrentIndex < imageViewSourceImages.length - 1;
+  _renderImageView(imageUrl, imageDescription, hasPrev, hasNext, img.id);
+}
+
+function _renderImageView(imageUrl, imageDescription, hasPrev, hasNext, imageId = null) {
+  const modal = document.getElementById('imageViewModal');
+  const fullSizeImage = document.getElementById('fullSizeImage');
+  const imageViewDescription = document.getElementById('imageViewDescription');
+  const prevBtn = document.getElementById('lightboxPrevBtn');
+  const nextBtn = document.getElementById('lightboxNextBtn');
+  const editDescBtn = document.getElementById('btnEditImageDescription');
+  const setCoverBtn = document.getElementById('btnSetAsCover');
+
+  if (!modal || !fullSizeImage) return;
 
   fullSizeImage.src = imageUrl;
-
   fullSizeImage.alt = imageDescription || 'Imagen en tamaño completo';
-
   imageViewDescription.textContent = imageDescription || '';
 
-  // Mostrar el modal
+  if (prevBtn) {
+    prevBtn.disabled = !hasPrev;
+    prevBtn.style.display = imageViewSourceImages.length > 1 ? 'flex' : 'none';
+  }
+  if (nextBtn) {
+    nextBtn.disabled = !hasNext;
+    nextBtn.style.display = imageViewSourceImages.length > 1 ? 'flex' : 'none';
+  }
+
+  // Solo mostrar acciones de gestion si el usuario puede gestionar y tenemos un ID real
+  const puedeGestionar = imageId && currentProjectGalleryCanManage;
+  if (editDescBtn) {
+    editDescBtn.style.display = puedeGestionar ? 'inline-flex' : 'none';
+    editDescBtn.dataset.imageId = imageId || '';
+  }
+  if (setCoverBtn) {
+    setCoverBtn.style.display = puedeGestionar ? 'inline-flex' : 'none';
+    setCoverBtn.dataset.imageId = imageId || '';
+  }
 
   modal.classList.add('active');
-
   document.body.style.overflow = 'hidden';
+}
 
+function imageViewNavigate(direction) {
+  if (!imageViewSourceImages.length) return;
+  const newIndex = imageViewCurrentIndex + direction;
+  if (newIndex >= 0 && newIndex < imageViewSourceImages.length) {
+    imageViewCurrentIndex = newIndex;
+    _updateImageViewFromCurrentIndex();
+  }
 }
 
 // Función para cerrar modal de imagen
-
 function closeImageViewModal() {
-
   const modal = document.getElementById('imageViewModal');
-
   if (modal) {
-
     modal.classList.remove('active');
-
     document.body.style.overflow = '';
-
   }
-
+  imageViewCurrentIndex = -1;
+  imageViewSourceImages = [];
 }
 
 // Función para mostrar modal de agregar imagen
@@ -5598,93 +5639,47 @@ function renderProjectGalleryPage() {
       galleryWrapper.removeEventListener('click', galleryWrapper._imageModalHandler, false);
     }
     
-    // Agregar event listener para botones de eliminar usando delegación de eventos
-    if (currentProjectGalleryCanManage) {
-      // Remover handler anterior si existe
-      if (galleryWrapper._imageDeleteHandler) {
-        galleryWrapper.removeEventListener('click', galleryWrapper._imageDeleteHandler, true);
-      }
-      
-      galleryWrapper._imageDeleteHandler = async function (e) {
-        // Verificar si el clic fue en un botón de eliminar imagen o en su contenido (SVG, etc.)
-        const clickedElement = e.target;
-        
-        // Buscar el botón más cercano que tenga data-imagen-id (puede ser el botón mismo o un padre)
-        let removeBtn = clickedElement.closest('[data-imagen-id]');
-        
-        // Si no se encontró directamente, buscar por la clase btn-remove-item
-        // Esto captura cuando se hace clic en el SVG dentro del botón
-        if (!removeBtn) {
-          const btnRemoveItem = clickedElement.closest('.btn-remove-item');
-          if (btnRemoveItem) {
-            // El botón con clase btn-remove-item debería tener el atributo data-imagen-id
-            removeBtn = btnRemoveItem;
-          }
-        }
-        
-        // También verificar si el elemento clickeado es el SVG o una línea dentro del SVG
-        if (!removeBtn) {
-          const svgElement = clickedElement.closest('svg');
-          if (svgElement) {
-            const parentBtn = svgElement.closest('[data-imagen-id]') || svgElement.closest('.btn-remove-item');
-            if (parentBtn) {
-              removeBtn = parentBtn;
-            }
-          }
-        }
-        
-        // Verificar que encontramos el botón y que tiene el atributo data-imagen-id
-        if (removeBtn && removeBtn.hasAttribute('data-imagen-id')) {
-          e.preventDefault();
-          e.stopPropagation();
-          e.stopImmediatePropagation();
-          
-          const imagenId = removeBtn.getAttribute('data-imagen-id');
-          const imageName = removeBtn.hasAttribute('data-image-name') 
-            ? decodeURIComponent(removeBtn.getAttribute('data-image-name'))
-            : '';
-          
-          if (imagenId) {
-            console.log('Eliminando imagen de galería:', imagenId); // Debug
-            confirmarEliminacionImagenGaleria(imagenId, imageName);
-          }
-          return false;
-        }
-      };
-      
-      // Agregar el listener en capture phase para que se ejecute primero
-      galleryWrapper.addEventListener('click', galleryWrapper._imageDeleteHandler, true);
+    // Unico handler delegado para la galeria: evita el problema de capture phase
+    // que bloqueaba los clics normales y causaba que el hover/click se sintiera "trabado".
+    if (galleryWrapper._galleryUnifiedHandler) {
+      galleryWrapper.removeEventListener('click', galleryWrapper._galleryUnifiedHandler);
+      galleryWrapper._galleryUnifiedHandler = null;
     }
 
-    // Agregar event listener para abrir modal de imagen (en bubbling phase)
-    galleryWrapper._imageModalHandler = function (e) {
-      // Si el clic fue en un botón de eliminar, no hacer nada
-      if (e.target.closest('.btn-remove-item') || e.target.closest('[data-imagen-id]')) {
+    galleryWrapper._galleryUnifiedHandler = function (e) {
+      const removeBtn = e.target.closest('.btn-remove-item');
+      if (removeBtn && currentProjectGalleryCanManage) {
+        e.preventDefault();
+        e.stopPropagation();
+        const imagenId = removeBtn.getAttribute('data-imagen-id');
+        const imageName = removeBtn.hasAttribute('data-image-name')
+          ? decodeURIComponent(removeBtn.getAttribute('data-image-name'))
+          : '';
+        if (imagenId) {
+          confirmarEliminacionImagenGaleria(imagenId, imageName);
+        }
         return;
       }
-      
-      // Buscar el gallery-item más cercano al elemento clickeado
+
       const galleryItem = e.target.closest('.gallery-item');
-      if (!galleryItem) {
-        return;
-      }
-      
-      const imageUrl = galleryItem.getAttribute('data-image-url') || 
-                       galleryItem.querySelector('img')?.getAttribute('data-image-url') || 
+      if (!galleryItem) return;
+
+      const imageUrl = galleryItem.getAttribute('data-image-url') ||
+                       galleryItem.querySelector('img')?.getAttribute('data-image-url') ||
                        galleryItem.querySelector('img')?.getAttribute('src');
-      const imageDescription = galleryItem.getAttribute('data-image-description') || 
+      const imageDescription = galleryItem.getAttribute('data-image-description') ||
                               galleryItem.querySelector('img')?.getAttribute('data-image-description') || '';
       if (imageUrl) {
         showImageViewModal(imageUrl, imageDescription);
       }
     };
-    
-    galleryWrapper.addEventListener('click', galleryWrapper._imageModalHandler, false);
+
+    galleryWrapper.addEventListener('click', galleryWrapper._galleryUnifiedHandler);
   }
 }
 
 function confirmarEliminacionImagenGaleria(imagenId, imageName = '') {
-  
+
   if (!tienePermisoGestionActual()) {
     mostrarMensajePermisoDenegado();
     return;
@@ -5699,6 +5694,174 @@ function confirmarEliminacionImagenGaleria(imagenId, imageName = '') {
   showConfirmModal(message, async () => {
     await eliminarImagenGaleria(imagenId);
   });
+}
+
+function openGalleryFullModal() {
+  const modal = document.getElementById('galleryFullModal');
+  const masonry = document.getElementById('galleryFullMasonry');
+  if (!modal || !masonry) return;
+
+  masonry.innerHTML = '';
+
+  if (!Array.isArray(currentProjectGalleryImages) || currentProjectGalleryImages.length === 0) {
+    masonry.innerHTML = '<p style="color: #6c757d; text-align: center; padding: 40px;">No hay imágenes disponibles.</p>';
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    return;
+  }
+
+  const placeholderSvg = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 300'><rect width='100%' height='100%' fill='%231d2531'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='%23b8c5d1' font-family='Arial' font-size='16'>Sin imagen</text></svg>";
+
+  currentProjectGalleryImages.forEach((img, index) => {
+    const imageUrl = img.url || (img.base64 ? `data:${img.tipo || 'image/jpeg'};base64,${img.base64}` : '');
+    const description = escapeHtml(img.descripcion || '');
+
+    const item = document.createElement('div');
+    item.className = 'gallery-masonry-item';
+    item.dataset.index = index;
+    item.innerHTML = `
+      <img src="${imageUrl}" alt="${escapeHtml(img.nombre || img.archivo_nombre || 'Imagen')}" loading="lazy" onerror="this.onerror=null; this.src='${placeholderSvg}'">
+      ${description ? `<div class="gallery-masonry-description">${description}</div>` : ''}
+    `;
+    item.addEventListener('click', () => {
+      openGalleryLightbox(index);
+    });
+    masonry.appendChild(item);
+  });
+
+  modal.classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeGalleryFullModal() {
+  const modal = document.getElementById('galleryFullModal');
+  if (modal) {
+    modal.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+}
+
+function openEditImageDescriptionModal(imageId) {
+  if (!imageId || !tienePermisoGestionActual()) {
+    mostrarMensajePermisoDenegado();
+    return;
+  }
+  const img = currentProjectGalleryImages.find(i => String(i.id) === String(imageId));
+  if (!img) return;
+
+  const modal = document.getElementById('editImageDescriptionModal');
+  const textarea = document.getElementById('editImageDescriptionText');
+  const confirmBtn = document.getElementById('confirmEditImageDescriptionBtn');
+  if (!modal || !textarea || !confirmBtn) return;
+
+  textarea.value = img.descripcion || '';
+  confirmBtn.dataset.imageId = imageId;
+  showModal('editImageDescriptionModal');
+}
+
+async function saveImageDescription() {
+  const confirmBtn = document.getElementById('confirmEditImageDescriptionBtn');
+  const imageId = confirmBtn ? confirmBtn.dataset.imageId : null;
+  if (!imageId) return;
+
+  const textarea = document.getElementById('editImageDescriptionText');
+  const descripcion = textarea ? textarea.value.trim() : '';
+
+  const currentProject = getCurrentProject();
+  if (!currentProject || !currentProject.id) {
+    showErrorMessage('No se pudo obtener la información del proyecto');
+    return;
+  }
+
+  try {
+    const formData = new FormData();
+    formData.append('descripcion', descripcion);
+    formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+
+    const response = await fetch(`/api/evento/${currentProject.id}/galeria/${imageId}/descripcion/`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'X-CSRFToken': getCookie('csrftoken') },
+      body: formData
+    });
+
+    const result = await response.json();
+    if (result.success) {
+      // Actualizar localmente
+      const img = currentProjectGalleryImages.find(i => String(i.id) === String(imageId));
+      if (img) {
+        img.descripcion = descripcion;
+      }
+      // Actualizar descripcion en el lightbox si esta abierto
+      if (imageViewCurrentIndex !== -1 && imageViewSourceImages[imageViewCurrentIndex]) {
+        const currentImg = imageViewSourceImages[imageViewCurrentIndex];
+        if (String(currentImg.id) === String(imageId)) {
+          currentImg.descripcion = descripcion;
+          document.getElementById('imageViewDescription').textContent = descripcion;
+        }
+      }
+      // Re-renderizar galeria
+      renderProjectGalleryPage();
+      hideModal('editImageDescriptionModal');
+      showSuccessMessage('Descripción actualizada exitosamente');
+    } else {
+      showErrorMessage(result.error || 'Error al actualizar la descripción');
+    }
+  } catch (error) {
+    showErrorMessage('Error al actualizar la descripción. Intenta de nuevo.');
+  }
+}
+
+function setGalleryImageAsCover(imageId) {
+  if (!imageId || !tienePermisoGestionActual()) {
+    mostrarMensajePermisoDenegado();
+    return;
+  }
+  const currentProject = getCurrentProject();
+  if (!currentProject || !currentProject.id) return;
+
+  const img = currentProjectGalleryImages.find(i => String(i.id) === String(imageId));
+  if (!img) return;
+
+  const hasExistingCover = !!(currentProject.portada && currentProject.portada.url);
+  const action = async () => {
+    try {
+      const formData = new FormData();
+      formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+
+      const response = await fetch(`/api/evento/${currentProject.id}/galeria/${imageId}/portada/`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'X-CSRFToken': getCookie('csrftoken') },
+        body: formData
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        currentProject.portada = result.portada;
+        // Actualizar imagen principal si estamos en detalle
+        const detailMainImage = document.getElementById('detailMainImage');
+        if (detailMainImage && result.portada && result.portada.url) {
+          detailMainImage.src = result.portada.url;
+        }
+        showSuccessMessage('Portada actualizada exitosamente');
+      } else {
+        showErrorMessage(result.error || 'Error al establecer la portada');
+      }
+    } catch (error) {
+      showErrorMessage('Error al establecer la portada. Intenta de nuevo.');
+    }
+  };
+
+  if (hasExistingCover) {
+    showConfirmModal(
+      'Ya existe una portada para este proyecto. ¿Deseas reemplazarla por esta imagen?',
+      action,
+      () => {}
+    );
+  } else {
+    action();
+  }
 }
 
 document.addEventListener('click', (event) => {
@@ -6466,47 +6629,36 @@ function loadPredefinedCards() {
 }
 
 // Función para cargar tarjetas seleccionadas
-
 function loadSelectedCards() {
-
   const container = document.getElementById('selectedCardsContainer');
+  const countBadge = document.getElementById('selectedCardsCount');
 
   if (!container) return;
 
   container.innerHTML = '';
+  if (countBadge) countBadge.textContent = selectedCards.length;
 
   if (selectedCards.length === 0) {
-
     container.innerHTML = '<p style="color: #6c757d; text-align: center; padding: 20px;">No hay tarjetas seleccionadas. Selecciona tarjetas predefinidas o crea una personalizada.</p>';
-
     return;
-
   }
 
   const puedeEditarTarjetas = !!puedeGestionarProyectoActual;
 
   selectedCards.forEach((card, index) => {
     const cardElement = document.createElement('div');
-
     cardElement.className = 'selected-card';
-
     cardElement.dataset.index = index;
 
     const icon = escapeHtml(card.icon || '📊');
-
     const label = escapeHtml(card.label || '');
-
     const value = escapeHtml(card.value || '');
-
     const isLocked = !!card.isLocked;
-
     const esSoloLectura = isLocked || !puedeEditarTarjetas;
 
     if (esSoloLectura) {
       cardElement.classList.add('selected-card-locked');
-
       const indicatorLabel = isLocked ? 'Fijo' : 'Solo lectura';
-
       const indicatorTitle = isLocked
         ? 'Este dato no se puede editar ni eliminar'
         : 'No tienes permisos para editar este dato';
@@ -6524,7 +6676,7 @@ function loadSelectedCards() {
     } else {
       cardElement.innerHTML = `
         <div class="selected-card-icon">
-          <input type="text" value="${icon}" placeholder="📊" class="card-icon-input" data-index="${index}" maxlength="2" style="width: 40px; text-align: center; font-size: 1.5rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; padding: 4px;">
+          <input type="text" value="${icon}" placeholder="📊" class="card-icon-input" data-index="${index}" maxlength="2">
         </div>
         <div class="selected-card-info">
           <div class="selected-card-label">
@@ -6534,140 +6686,112 @@ function loadSelectedCards() {
             <input type="text" value="${value}" placeholder="Ingresa el valor..." class="card-value-input" data-index="${index}">
           </div>
         </div>
-        <button class="remove-card-btn" data-index="${index}" title="Eliminar tarjeta">
+        <button class="remove-card-btn" data-index="${index}" title="Eliminar tarjeta" type="button">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
           </svg>
         </button>
       `;
+
+      // Doble clic / clic para abrir modal de edicion de valor
+      cardElement.addEventListener('click', (e) => {
+        // No abrir si el clic fue en un input o en el boton eliminar
+        if (e.target.tagName === 'INPUT' || e.target.closest('.remove-card-btn')) {
+          return;
+        }
+        openEditCardValueModal(index);
+      });
     }
 
     container.appendChild(cardElement);
   });
 
-  // Agregar event listeners para inputs de icono, título y valor
+  // Delegacion de eventos para inputs (evita re-adjuntar listeners)
+  if (!container._selectedCardsDelegation) {
+    container._selectedCardsDelegation = true;
+    container.addEventListener('input', (e) => {
+      const input = e.target;
+      const index = parseInt(input.dataset.index, 10);
+      if (isNaN(index) || !selectedCards[index]) return;
 
-  container.querySelectorAll('.card-icon-input').forEach(input => {
-
-    input.addEventListener('input', (e) => {
-
-      const index = parseInt(e.target.dataset.index);
-
-      if (selectedCards[index]) {
-
-        selectedCards[index].icon = e.target.value || '📊';
-
+      if (input.classList.contains('card-icon-input')) {
+        selectedCards[index].icon = input.value || '📊';
+      } else if (input.classList.contains('card-label-input')) {
+        selectedCards[index].label = input.value;
+      } else if (input.classList.contains('card-value-input')) {
+        selectedCards[index].value = input.value;
       }
-
     });
+  }
+}
 
-  });
+let editCardValueIndex = null;
 
-  container.querySelectorAll('.card-label-input').forEach(input => {
+function openEditCardValueModal(index) {
+  if (index === null || index === undefined || !selectedCards[index]) return;
+  const card = selectedCards[index];
+  editCardValueIndex = index;
 
-    input.addEventListener('input', (e) => {
+  const modal = document.getElementById('editCardValueModal');
+  const title = document.getElementById('editCardValueTitle');
+  const input = document.getElementById('editCardValueInput');
+  if (!modal || !input) return;
 
-      const index = parseInt(e.target.dataset.index);
+  if (title) title.textContent = `Editar: ${card.label || 'Tarjeta'}`;
+  input.value = card.value || '';
+  showModal('editCardValueModal');
+  setTimeout(() => input.focus(), 100);
+}
 
-      if (selectedCards[index]) {
-
-        selectedCards[index].label = e.target.value;
-
-      }
-
-    });
-
-  });
-
-  container.querySelectorAll('.card-value-input').forEach(input => {
-
-    input.addEventListener('input', (e) => {
-
-      const index = parseInt(e.target.dataset.index);
-
-      if (selectedCards[index]) {
-
-        selectedCards[index].value = e.target.value;
-
-      }
-
-    });
-
-  });
-
+function saveEditCardValue() {
+  if (editCardValueIndex === null || !selectedCards[editCardValueIndex]) return;
+  const input = document.getElementById('editCardValueInput');
+  const newValue = input ? input.value.trim() : '';
+  selectedCards[editCardValueIndex].value = newValue;
+  loadSelectedCards();
+  hideModal('editCardValueModal');
+  editCardValueIndex = null;
 }
 
 // Función para alternar selección de tarjeta predefinida
-
 function togglePredefinedCard(card) {
-
   if (!tienePermisoGestionActual()) {
-
     mostrarMensajePermisoDenegado();
-
     return;
-
   }
 
   const cardElement = document.querySelector(`[data-card-id="${card.id}"]`);
-
-  // Verificar si ya está seleccionada usando el ID de la tarjeta predefinida
-
-  const existingIndex = selectedCards.findIndex(selected => 
-
+  const existingIndex = selectedCards.findIndex(selected =>
     selected.predefinedCardId === card.id
-
   );
 
   if (existingIndex !== -1) {
-
-    // Remover de seleccionadas si ya existe
-
-    selectedCards.splice(existingIndex, 1);
-
-    cardElement.classList.remove('selected');
-
-  } else {
-
-    // Verificar si ya existe una tarjeta con el mismo label (evitar duplicados)
-
-    const duplicateLabel = selectedCards.some(selected => (selected.label || '').toLowerCase() === card.label.toLowerCase());
-
-    if (duplicateLabel) {
-
-      showErrorMessage(`Ya existe una tarjeta con el título "${card.label}"`);
-
-      return;
-
-    }
-
-    // Agregar a seleccionadas (con ID temporal para nuevas y el ID de predefinida)
-
-    selectedCards.push({
-
-      id: generateCardId(), // ID temporal para nuevas tarjetas
-
-      predefinedCardId: card.id, // ID de la tarjeta predefinida para evitar duplicados
-
-      icon: card.icon,
-
-      label: card.label,
-
-      value: '',
-
-      isCustom: false
-
-    });
-
-    cardElement.classList.add('selected');
-
+    // Si ya esta seleccionada, abrir modal para editar su valor
+    openEditCardValueModal(existingIndex);
+    return;
   }
 
-  // Recargar tarjetas seleccionadas
+  // Verificar duplicados por label
+  const duplicateLabel = selectedCards.some(selected => (selected.label || '').toLowerCase() === card.label.toLowerCase());
+  if (duplicateLabel) {
+    showErrorMessage(`Ya existe una tarjeta con el título "${card.label}"`);
+    return;
+  }
 
+  // Agregar a seleccionadas y abrir modal de valor
+  selectedCards.push({
+    id: generateCardId(),
+    predefinedCardId: card.id,
+    icon: card.icon,
+    label: card.label,
+    value: '',
+    isCustom: false
+  });
+
+  if (cardElement) cardElement.classList.add('selected');
   loadSelectedCards();
-
+  openEditCardValueModal(selectedCards.length - 1);
 }
 
 // Función para configurar event listeners del modal
@@ -8304,77 +8428,19 @@ async function addChangeToProject() {
 
 // Las funciones showEditDescriptionModal y updateProjectDescription ya están definidas arriba
 
-// Función para limpiar formulario de datos
+async function showAddCommunityModal() {
 
-function clearDataForm() {
+  if (!tienePermisoGestionActual()) {
 
-  document.getElementById('editProjectTitle').value = '';
-
-  document.getElementById('editProjectLocation').value = '';
-
-  document.getElementById('editProjectDate').value = '';
-
-  document.getElementById('editProjectStatus').value = '';
-
-}
-
-// Función para actualizar datos del proyecto
-
-async function updateProjectData() {
-
-  const participants = document.getElementById('editParticipants').value;
-
-  const duration = document.getElementById('editDuration').value;
-
-  const objective = document.getElementById('editObjective').value;
-
-  const evaluation = document.getElementById('editEvaluation').value;
-
-  if (!participants.trim() || !duration.trim() || !objective.trim() || !evaluation.trim()) {
-
-    showErrorMessage('Por favor completa todos los campos');
+    mostrarMensajePermisoDenegado();
 
     return;
 
   }
 
-  const currentProject = getCurrentProject();
-
-  if (currentProject) {
-
-    // Actualizar los datos de las tarjetas
-
-    currentProject.data = [
-
-      { icon: '👥', label: 'Participantes', value: participants },
-
-      { icon: '⏱️', label: 'Duración', value: duration },
-
-      { icon: '🎯', label: 'Objetivo', value: objective },
-
-      { icon: '📊', label: 'Evaluación', value: evaluation }
-
-    ];
-
-    // Recargar la vista del proyecto
-
-    await loadProjectDetail(currentProject);
-
-    showSuccessMessage('Datos actualizados exitosamente');
-
-    hideModal('editDataModal');
-
-  }
-
-}
-
-// Función para mostrar modal de agregar comunidad
-
-function showAddCommunityModal() {
-
   showModal('addCommunityModal');
 
-  loadCommunitiesList();
+  await loadCommunitiesList();
 
 }
 
@@ -8382,15 +8448,31 @@ function showAddCommunityModal() {
 
 function clearCommunityForm() {
 
-  document.getElementById('communityName').value = '';
+  const searchInput = document.getElementById('communitySearch');
 
-  document.getElementById('communityRegion').value = '';
+  if (searchInput) searchInput.value = '';
+
+  selectedCommunityIds = new Set();
+
+  renderCommunitiesList();
+
+  renderSelectedCommunityChips();
 
 }
 
-// Función para agregar comunidad al proyecto
+// Función para guardar las comunidades seleccionadas en el proyecto
 
 async function addCommunityToProject() {
+
+  const currentProject = getCurrentProject();
+
+  if (!currentProject || !currentProject.id) {
+
+    showErrorMessage('No se pudo obtener la información del proyecto.');
+
+    return;
+
+  }
 
   const selectedCommunities = getSelectedCommunities();
 
@@ -8402,37 +8484,97 @@ async function addCommunityToProject() {
 
   }
 
-  const currentProject = getCurrentProject();
+  // Preservar fechas de agregado de las comunidades que ya existían
 
-  if (currentProject) {
+  const projectCommunities = [
 
-    if (!currentProject.communities) {
+    ...(Array.isArray(currentProject.comunidades) ? currentProject.comunidades : []),
 
-      currentProject.communities = [];
+    ...(Array.isArray(currentProject.communities) ? currentProject.communities : [])
 
-    }
+  ];
 
-    selectedCommunities.forEach(community => {
+  const existingById = {};
 
-      const communityData = {
+  projectCommunities.forEach(c => {
 
-        name: community.name,
+    const id = String(c.comunidad_id || c.id || '');
 
-        region: community.region
+    if (id) existingById[id] = c;
 
-      };
+  });
 
-      currentProject.communities.push(communityData);
+  const comunidadesPayload = selectedCommunities.map(community => {
+
+    const existing = existingById[community.id];
+
+    return {
+
+      comunidad_id: community.id,
+
+      region_id: community.region_id || '',
+
+      agregado_en: existing?.agregado_en || null
+
+    };
+
+  });
+
+  try {
+
+    const formData = new FormData();
+
+    formData.append('comunidades_seleccionadas', JSON.stringify(comunidadesPayload));
+
+    formData.append('comunidad_id', comunidadesPayload[0].comunidad_id);
+
+    const response = await fetch(`/api/evento/${currentProject.id}/actualizar/`, {
+
+      method: 'POST',
+
+      credentials: 'include',
+
+      headers: {
+
+        'X-CSRFToken': getCookie('csrftoken')
+
+      },
+
+      body: formData
 
     });
 
-    // Recargar la vista del proyecto
+    const contentType = response.headers.get('content-type');
 
-    await loadProjectDetail(currentProject);
+    if (!contentType || !contentType.includes('application/json')) {
 
-    showSuccessMessage(`${selectedCommunities.length} comunidad(es) agregada(s) exitosamente`);
+      showErrorMessage('Error del servidor. Por favor, intenta de nuevo.');
 
-    hideModal('addCommunityModal');
+      return;
+
+    }
+
+    const result = await response.json();
+
+    if (result.success) {
+
+      await loadProjectDetails(currentProject.id);
+
+      showSuccessMessage(`${selectedCommunities.length} comunidad(es) guardada(s) exitosamente`);
+
+      hideModal('addCommunityModal');
+
+    } else {
+
+      showErrorMessage(result.error || 'Error al guardar las comunidades.');
+
+    }
+
+  } catch (error) {
+
+    console.error('❌ Error guardando comunidades:', error);
+
+    showErrorMessage('Error al guardar las comunidades. Por favor, intenta de nuevo.');
 
   }
 
@@ -9277,6 +9419,28 @@ document.addEventListener('DOMContentLoaded', function() {
 
   }
 
+  // Event listener para expandir portada desde el boton de la imagen principal
+  const coverExpandBtn = document.getElementById('coverExpandBtn');
+  const detailMainImage = document.getElementById('detailMainImage');
+  if (coverExpandBtn && detailMainImage) {
+    coverExpandBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const src = detailMainImage.src;
+      if (src && !src.includes('unsplash.com')) {
+        showImageViewModal(src, 'Portada del proyecto');
+      } else if (src) {
+        showImageViewModal(src, 'Imagen del proyecto');
+      }
+    });
+    // Tambien permitir clic en la imagen para expandir (opcional, mas intuitivo)
+    detailMainImage.style.cursor = 'zoom-in';
+    detailMainImage.addEventListener('click', function(e) {
+      if (coverExpandBtn && coverExpandBtn.offsetParent !== null) {
+        coverExpandBtn.click();
+      }
+    });
+  }
+
   // Event listener para cerrar modal de imagen al hacer clic fuera del contenido
 
   const imageViewModal = document.getElementById('imageViewModal');
@@ -9297,6 +9461,66 @@ document.addEventListener('DOMContentLoaded', function() {
 
   }
 
+  // Navegacion del lightbox
+  const lightboxPrevBtn = document.getElementById('lightboxPrevBtn');
+  const lightboxNextBtn = document.getElementById('lightboxNextBtn');
+  if (lightboxPrevBtn) {
+    lightboxPrevBtn.addEventListener('click', (e) => { e.stopPropagation(); imageViewNavigate(-1); });
+  }
+  if (lightboxNextBtn) {
+    lightboxNextBtn.addEventListener('click', (e) => { e.stopPropagation(); imageViewNavigate(1); });
+  }
+
+  // Acciones del lightbox (editar descripcion y usar como portada)
+  const btnEditImageDescription = document.getElementById('btnEditImageDescription');
+  const btnSetAsCover = document.getElementById('btnSetAsCover');
+  if (btnEditImageDescription) {
+    btnEditImageDescription.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const imageId = btnEditImageDescription.dataset.imageId;
+      if (imageId) openEditImageDescriptionModal(imageId);
+    });
+  }
+  if (btnSetAsCover) {
+    btnSetAsCover.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const imageId = btnSetAsCover.dataset.imageId;
+      if (imageId) setGalleryImageAsCover(imageId);
+    });
+  }
+
+  // Modal galeria completa
+  const viewGalleryFullBtn = document.getElementById('viewGalleryFullBtn');
+  const closeGalleryFullModalBtn = document.getElementById('closeGalleryFullModal');
+  const galleryFullModal = document.getElementById('galleryFullModal');
+  if (viewGalleryFullBtn) {
+    viewGalleryFullBtn.addEventListener('click', openGalleryFullModal);
+  }
+  if (closeGalleryFullModalBtn) {
+    closeGalleryFullModalBtn.addEventListener('click', closeGalleryFullModal);
+  }
+  if (galleryFullModal) {
+    galleryFullModal.addEventListener('click', function(e) {
+      if (e.target === galleryFullModal) {
+        closeGalleryFullModal();
+      }
+    });
+  }
+
+  // Modal editar descripcion de imagen
+  const closeEditImageDescriptionModalBtn = document.getElementById('closeEditImageDescriptionModal');
+  const cancelEditImageDescriptionBtn = document.getElementById('cancelEditImageDescriptionBtn');
+  const confirmEditImageDescriptionBtn = document.getElementById('confirmEditImageDescriptionBtn');
+  if (closeEditImageDescriptionModalBtn) {
+    closeEditImageDescriptionModalBtn.addEventListener('click', () => hideModal('editImageDescriptionModal'));
+  }
+  if (cancelEditImageDescriptionBtn) {
+    cancelEditImageDescriptionBtn.addEventListener('click', () => hideModal('editImageDescriptionModal'));
+  }
+  if (confirmEditImageDescriptionBtn) {
+    confirmEditImageDescriptionBtn.addEventListener('click', saveImageDescription);
+  }
+
   // Event listener para cerrar modal de imagen con tecla ESC
 
   document.addEventListener('keydown', function(e) {
@@ -9309,6 +9533,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
         closeImageViewModal();
 
+      }
+
+      const galleryFullModalActive = document.getElementById('galleryFullModal');
+      if (galleryFullModalActive && galleryFullModalActive.classList.contains('active')) {
+        closeGalleryFullModal();
       }
 
     }
@@ -9555,6 +9784,62 @@ document.addEventListener('DOMContentLoaded', function() {
     fileInput.addEventListener('change', handleFileSelect);
 
   }
+  // Event listeners para modal de edición de valor de tarjeta
+
+  const closeEditCardValueModal = document.getElementById('closeEditCardValueModal');
+
+  if (closeEditCardValueModal) {
+
+    closeEditCardValueModal.addEventListener('click', () => {
+
+      editCardValueIndex = null;
+
+      hideModal('editCardValueModal');
+
+    });
+
+  }
+
+  const cancelEditCardValueBtn = document.getElementById('cancelEditCardValueBtn');
+
+  if (cancelEditCardValueBtn) {
+
+    cancelEditCardValueBtn.addEventListener('click', () => {
+
+      editCardValueIndex = null;
+
+      hideModal('editCardValueModal');
+
+    });
+
+  }
+
+  const confirmEditCardValueBtn = document.getElementById('confirmEditCardValueBtn');
+
+  if (confirmEditCardValueBtn) {
+
+    confirmEditCardValueBtn.addEventListener('click', saveEditCardValue);
+
+  }
+
+  const editCardValueInput = document.getElementById('editCardValueInput');
+
+  if (editCardValueInput) {
+
+    editCardValueInput.addEventListener('keydown', (e) => {
+
+      if (e.key === 'Enter') {
+
+        e.preventDefault();
+
+        saveEditCardValue();
+
+      }
+
+    });
+
+  }
+
   // Event listeners para modales de selección
 
   const closeCommunitySelectionModal = document.getElementById('closeCommunitySelectionModal');
@@ -9951,7 +10236,149 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Función para cargar lista de comunidades
 
-function loadCommunitiesList() {
+async function loadAvailableCommunities(force = false) {
+
+  if (availableCommunitiesLoaded && !force) return;
+
+  try {
+
+    const response = await fetch('/api/comunidades/', {
+
+      credentials: 'include',
+
+      headers: { 'Accept': 'application/json' }
+
+    });
+
+    if (!response.ok) throw new Error('Error al cargar comunidades');
+
+    const data = await response.json();
+
+    availableCommunities = (Array.isArray(data) ? data : []).map(c => ({
+
+      id: String(c.id || ''),
+
+      name: c.nombre || 'Sin nombre',
+
+      region: c.region?.nombre || 'Sin región',
+
+      region_id: c.region?.id ? String(c.region.id) : '',
+
+      codigo: c.codigo || '',
+
+      imagen_url: c.imagen_url || ''
+
+    })).sort((a, b) => a.name.localeCompare(b.name));
+
+    availableCommunitiesLoaded = true;
+
+  } catch (error) {
+
+    console.error('❌ Error cargando comunidades:', error);
+
+    availableCommunities = [];
+
+  }
+
+}
+
+async function loadCommunitiesList() {
+
+  const communitiesList = document.getElementById('communitiesList');
+
+  if (!communitiesList) return;
+
+  communitiesList.innerHTML = '<p style="color: #6c757d; text-align: center; padding: 20px;">Cargando comunidades...</p>';
+
+  await loadAvailableCommunities();
+
+  // Inicializar selección desde el proyecto actual
+
+  selectedCommunityIds = new Set();
+
+  const currentProject = getCurrentProject();
+
+  if (currentProject) {
+
+    const projectCommunities = [
+
+      ...(Array.isArray(currentProject.comunidades) ? currentProject.comunidades : []),
+
+      ...(Array.isArray(currentProject.communities) ? currentProject.communities : [])
+
+    ];
+
+    projectCommunities.forEach(c => {
+
+      const id = String(c.comunidad_id || c.id || '');
+
+      if (id) selectedCommunityIds.add(id);
+
+    });
+
+  }
+
+  renderCommunitiesList();
+
+  renderSelectedCommunityChips();
+
+  // Delegación de eventos (solo una vez)
+
+  if (!communitiesList._communityDelegation) {
+
+    communitiesList._communityDelegation = true;
+
+    communitiesList.addEventListener('change', (e) => {
+
+      const checkbox = e.target.closest('.community-item input[type="checkbox"]');
+
+      if (!checkbox) return;
+
+      const id = String(checkbox.value);
+
+      if (checkbox.checked) selectedCommunityIds.add(id);
+
+      else selectedCommunityIds.delete(id);
+
+      renderCommunitiesList();
+
+      renderSelectedCommunityChips();
+
+    });
+
+    communitiesList.addEventListener('click', (e) => {
+
+      const item = e.target.closest('.community-item');
+
+      if (!item || e.target.tagName === 'INPUT') return;
+
+      const checkbox = item.querySelector('input[type="checkbox"]');
+
+      if (checkbox) checkbox.click();
+
+    });
+
+  }
+
+  const searchInput = document.getElementById('communitySearch');
+
+  if (searchInput) {
+
+    searchInput.value = '';
+
+    if (!searchInput._communitySearchListener) {
+
+      searchInput.addEventListener('input', filterCommunities);
+
+      searchInput._communitySearchListener = true;
+
+    }
+
+  }
+
+}
+
+function renderCommunitiesList() {
 
   const communitiesList = document.getElementById('communitiesList');
 
@@ -9959,39 +10386,117 @@ function loadCommunitiesList() {
 
   communitiesList.innerHTML = '';
 
-  availableCommunities.forEach(community => {
+  const searchInput = document.getElementById('communitySearch');
 
-    const communityItem = document.createElement('div');
+  const searchTerm = (searchInput ? searchInput.value : '').toLowerCase().trim();
 
-    communityItem.className = 'community-item';
+  const filtered = availableCommunities.filter(c =>
 
-    communityItem.innerHTML = `
+    c.name.toLowerCase().includes(searchTerm) ||
 
-      <input type="checkbox" id="community-${community.id}" value="${community.id}">
+    c.region.toLowerCase().includes(searchTerm) ||
+
+    c.codigo.toLowerCase().includes(searchTerm)
+
+  );
+
+  if (filtered.length === 0) {
+
+    communitiesList.innerHTML = '<p style="color: #6c757d; text-align: center; padding: 20px;">No se encontraron comunidades.</p>';
+
+    return;
+
+  }
+
+  filtered.forEach(community => {
+
+    const isSelected = selectedCommunityIds.has(community.id);
+
+    const item = document.createElement('div');
+
+    item.className = 'community-item' + (isSelected ? ' selected' : '');
+
+    item.dataset.communityId = community.id;
+
+    item.innerHTML = `
+
+      <input type="checkbox" id="community-${community.id}" value="${community.id}" ${isSelected ? 'checked' : ''}>
 
       <div class="community-info">
 
-        <div class="community-name">${community.name}</div>
+        <div class="community-name">${escapeHtml(community.name)}</div>
 
-        <div class="community-region">${community.region}</div>
+        <div class="community-region">${escapeHtml(community.region)}${community.codigo ? ` · ${escapeHtml(community.codigo)}` : ''}</div>
 
       </div>
 
     `;
 
-    communitiesList.appendChild(communityItem);
+    communitiesList.appendChild(item);
 
   });
 
-  // Agregar event listener para el buscador
+}
 
-  const searchInput = document.getElementById('communitySearch');
+function renderSelectedCommunityChips() {
 
-  if (searchInput) {
+  const container = document.getElementById('selectedCommunitiesChips');
 
-    searchInput.addEventListener('input', filterCommunities);
+  if (!container) return;
+
+  container.innerHTML = '';
+
+  if (selectedCommunityIds.size === 0) {
+
+    container.innerHTML = '<p class="selected-communities-empty">No hay comunidades seleccionadas.</p>';
+
+    return;
 
   }
+
+  selectedCommunityIds.forEach(id => {
+
+    const community = availableCommunities.find(c => c.id === id);
+
+    if (!community) return;
+
+    const chip = document.createElement('div');
+
+    chip.className = 'community-chip';
+
+    chip.innerHTML = `
+
+      <span>${escapeHtml(community.name)}</span>
+
+      <button type="button" data-community-id="${community.id}" title="Quitar comunidad">
+
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+
+        </svg>
+
+      </button>
+
+    `;
+
+    chip.querySelector('button').addEventListener('click', (e) => {
+
+      e.stopPropagation();
+
+      selectedCommunityIds.delete(id);
+
+      renderCommunitiesList();
+
+      renderSelectedCommunityChips();
+
+    });
+
+    container.appendChild(chip);
+
+  });
 
 }
 
@@ -10035,15 +10540,11 @@ function loadPersonnelList() {
 
 function getSelectedCommunities() {
 
-  const checkboxes = document.querySelectorAll('#communitiesList input[type="checkbox"]:checked');
+  return Array.from(selectedCommunityIds)
 
-  return Array.from(checkboxes).map(cb => {
+    .map(id => availableCommunities.find(c => c.id === id))
 
-    const id = parseInt(cb.value);
-
-    return availableCommunities.find(c => c.id === id);
-
-  });
+    .filter(Boolean);
 
 }
 
@@ -10095,27 +10596,7 @@ function getSelectedPersonnel() {
 
 function filterCommunities() {
 
-  const searchTerm = document.getElementById('communitySearch').value.toLowerCase();
-
-  const communityItems = document.querySelectorAll('.community-item');
-
-  communityItems.forEach(item => {
-
-    const name = item.querySelector('.community-name').textContent.toLowerCase();
-
-    const region = item.querySelector('.community-region').textContent.toLowerCase();
-
-    if (name.includes(searchTerm) || region.includes(searchTerm)) {
-
-      item.style.display = 'flex';
-
-    } else {
-
-      item.style.display = 'none';
-
-    }
-
-  });
+  renderCommunitiesList();
 
 }
 // Función para cargar lista de personal en modal de cambios (solo colaboradores asignados al proyecto)
