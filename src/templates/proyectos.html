@@ -250,6 +250,17 @@
         <div class="detail-location-section">
           <div class="section-header">
             <h3 class="location-title">Comunidades Alcanzadas</h3>
+            {% if es_admin or es_personal %}
+            <div class="section-actions">
+              <button class="btn-edit-item" id="addCommunityBtn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Agregar Comunidad
+              </button>
+            </div>
+            {% endif %}
           </div>
           <div class="location-info" id="detailCommunities">
             <!-- Las comunidades se cargarán dinámicamente -->
@@ -602,7 +613,54 @@
         <div class="tab-content" id="custom-tab">
           <div class="form-group">
             <label for="customIcon" class="form-label">Emoji/Icono</label>
-            <input type="text" id="customIcon" class="form-input" placeholder="Ej: 🌱" maxlength="2">
+            <div class="emoji-input-wrapper">
+              <input type="text" id="customIcon" class="form-input" placeholder="Ej: 🌱" maxlength="2">
+              <button type="button" class="btn-emoji-picker" id="emojiPickerBtn" title="Seleccionar emoji">😀</button>
+              <div class="emoji-picker-dropdown" id="emojiPickerDropdown" style="display:none;">
+                <div class="emoji-picker-grid">
+                  <button type="button" class="emoji-option">📊</button>
+                  <button type="button" class="emoji-option">🌱</button>
+                  <button type="button" class="emoji-option">🌾</button>
+                  <button type="button" class="emoji-option">🌿</button>
+                  <button type="button" class="emoji-option">🌳</button>
+                  <button type="button" class="emoji-option">🌻</button>
+                  <button type="button" class="emoji-option">🌽</button>
+                  <button type="button" class="emoji-option">🍅</button>
+                  <button type="button" class="emoji-option">💧</button>
+                  <button type="button" class="emoji-option">☀️</button>
+                  <button type="button" class="emoji-option">👥</button>
+                  <button type="button" class="emoji-option">👨‍🌾</button>
+                  <button type="button" class="emoji-option">👩‍🌾</button>
+                  <button type="button" class="emoji-option">📈</button>
+                  <button type="button" class="emoji-option">📋</button>
+                  <button type="button" class="emoji-option">🗺️</button>
+                  <button type="button" class="emoji-option">🏠</button>
+                  <button type="button" class="emoji-option">🚜</button>
+                  <button type="button" class="emoji-option">🧑‍🤝‍🧑</button>
+                  <button type="button" class="emoji-option">🤝</button>
+                  <button type="button" class="emoji-option">💪</button>
+                  <button type="button" class="emoji-option">⭐</button>
+                  <button type="button" class="emoji-option">✅</button>
+                  <button type="button" class="emoji-option">🎯</button>
+                  <button type="button" class="emoji-option">💰</button>
+                  <button type="button" class="emoji-option">⏱️</button>
+                  <button type="button" class="emoji-option">📅</button>
+                  <button type="button" class="emoji-option">📏</button>
+                  <button type="button" class="emoji-option">🏢</button>
+                  <button type="button" class="emoji-option">🎓</button>
+                  <button type="button" class="emoji-option">📚</button>
+                  <button type="button" class="emoji-option">🔧</button>
+                  <button type="button" class="emoji-option">💡</button>
+                  <button type="button" class="emoji-option">❤️</button>
+                  <button type="button" class="emoji-option">♻️</button>
+                  <button type="button" class="emoji-option">🏆</button>
+                  <button type="button" class="emoji-option">📝</button>
+                  <button type="button" class="emoji-option">✏️</button>
+                  <button type="button" class="emoji-option">📌</button>
+                  <button type="button" class="emoji-option">🔍</button>
+                </div>
+              </div>
+            </div>
           </div>
           <div class="form-group">
             <label for="customLabel" class="form-label">Título de la Tarjeta</label>

@@ -3240,6 +3240,7 @@ select,
 
 /* Protección especial para botones del modal de confirmación */
 #confirmDeleteModal.active button,
+#confirmDeleteModal.active .btn-warning,
 #confirmDeleteModal.active .btn-danger,
 #confirmDeleteModal.active .btn-secondary,
 #confirmDeleteModal.active .modal-close {
@@ -3391,6 +3392,70 @@ select,
 
 .search-container .form-input::placeholder {
   color: var(--text-70);
+}
+
+/* ======= EM OJI PICKER ======= */
+.emoji-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.emoji-input-wrapper .form-input {
+  flex: 1;
+}
+
+.btn-emoji-picker {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 1.3rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  line-height: 1;
+}
+
+.btn-emoji-picker:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.emoji-picker-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 100;
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  padding: 10px;
+  margin-top: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  max-width: 320px;
+}
+
+.emoji-picker-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.emoji-option {
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  line-height: 1;
+}
+
+.emoji-option:hover {
+  background: rgba(59, 130, 246, 0.25);
 }
 
 /* ======= ESTILOS PARA MODAL DE EDICIÓN DE DATOS ======= */
@@ -4090,6 +4155,23 @@ select,
   font-size: 14px !important;
 }
 
+.btn-warning {
+  background: #e67e22;
+  color: white;
+  border: 1px solid #e67e22;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-warning:hover {
+  background: #d35400;
+  border-color: #c0392b;
+  transform: translateY(-1px);
+}
+
 .btn-danger {
   background: #dc3545;
   color: white;
@@ -4771,6 +4853,18 @@ body > header[style*="position: fixed"] {
 
 .image-view-actions .btn-action-lightbox:hover {
   background: rgba(0, 0, 0, 0.85);
+}
+
+.image-view-actions #btnSetAsCover {
+  background: rgba(230, 126, 34, 0.75);
+  border-color: rgba(243, 156, 18, 0.5);
+  font-weight: 600;
+}
+
+.image-view-actions #btnSetAsCover:hover {
+  background: rgba(230, 126, 34, 0.95);
+  border-color: #f39c12;
+  box-shadow: 0 0 12px rgba(243, 156, 18, 0.3);
 }
 
 .lightbox-nav {

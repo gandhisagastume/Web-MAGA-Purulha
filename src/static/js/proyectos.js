@@ -3371,6 +3371,7 @@ const PROJECT_ACTION_BUTTON_SELECTOR_LIST_BASE = [
   '#addImageBtn',
   '#editDataBtn',
   '#editDescriptionBtn',
+  '#addCommunityBtn',
 ];
 
 function buildProjectActionButtonSelectors() {
@@ -3448,6 +3449,9 @@ function handleProjectActionButtonClick(event) {
       break;
     case 'editDescriptionBtn':
       showEditDescriptionModal();
+      break;
+    case 'addCommunityBtn':
+      showAddCommunityModal();
       break;
     default:
       break;
@@ -4315,12 +4319,12 @@ let isConfirmModalOpen = false;
 // Interval para asegurar que los botones siempre estén habilitados cuando el modal está abierto
 let confirmModalProtectionInterval = null;
 
-function showConfirmModal(message, onConfirm, onCancel = null) {
+function showConfirmModal(message, onConfirm, onCancel = null, confirmText = null, confirmClass = null) {
   const confirmModal = document.getElementById('confirmDeleteModal');
   const confirmMessage = document.getElementById('confirmMessage');
+  const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
   
   if (!confirmModal || !confirmMessage) {
-    // Si no existe el modal, usar confirm nativo como fallback
     if (confirm(message)) {
       onConfirm();
     } else if (onCancel) {
@@ -4332,6 +4336,20 @@ function showConfirmModal(message, onConfirm, onCancel = null) {
   confirmMessage.textContent = message;
   pendingConfirmAction = { onConfirm, onCancel };
   isConfirmModalOpen = true;
+  
+  // Personalizar texto y clase del botón de confirmación
+  if (confirmDeleteBtn) {
+    if (confirmText) {
+      confirmDeleteBtn.textContent = confirmText;
+    } else {
+      confirmDeleteBtn.textContent = 'Eliminar';
+    }
+    if (confirmClass) {
+      confirmDeleteBtn.className = confirmClass;
+    } else {
+      confirmDeleteBtn.className = 'btn-danger';
+    }
+  }
   
   // Función para asegurar que los botones estén siempre habilitados
   const ensureButtonsEnabled = () => {
@@ -4402,11 +4420,17 @@ function showConfirmModal(message, onConfirm, onCancel = null) {
   // Ejecutar inmediatamente
   ensureButtonsEnabled();
   
-  // Crear intervalo de protección que se ejecuta cada 100ms mientras el modal está abierto
+  // Crear intervalo de protección con verificación de que el modal sigue abierto
   if (confirmModalProtectionInterval) {
     clearInterval(confirmModalProtectionInterval);
   }
-  confirmModalProtectionInterval = setInterval(ensureButtonsEnabled, 100);
+  confirmModalProtectionInterval = setInterval(() => {
+    if (!isConfirmModalOpen || !confirmModal || confirmModal.style.display === 'none' || !confirmModal.classList.contains('active')) {
+      _stopConfirmModalProtection();
+      return;
+    }
+    ensureButtonsEnabled();
+  }, 300);
   
   showModal('confirmDeleteModal');
   
@@ -5855,9 +5879,11 @@ function setGalleryImageAsCover(imageId) {
 
   if (hasExistingCover) {
     showConfirmModal(
-      'Ya existe una portada para este proyecto. ¿Deseas reemplazarla por esta imagen?',
+      'Ya existe una portada para este proyecto. ¿Deseas cambiarla por esta imagen?',
       action,
-      () => {}
+      () => {},
+      'Cambiar portada',
+      'btn-warning'
     );
   } else {
     action();
@@ -6570,6 +6596,18 @@ function loadEditDataModal() {
 
   setupEditDataEventListeners();
 
+  // Inicializar selector de emojis (solo una vez)
+
+  const emojiBtn = document.getElementById('emojiPickerBtn');
+
+  if (emojiBtn && !emojiBtn._emojiPickerInit) {
+
+    initEmojiPicker();
+
+    emojiBtn._emojiPickerInit = true;
+
+  }
+
 }
 
 // Función para cargar tarjetas predefinidas
@@ -6920,6 +6958,36 @@ function filterPredefinedCards() {
 
 }
 
+// Inicializar selector de emojis para crear personalizada
+
+function initEmojiPicker() {
+  const btn = document.getElementById('emojiPickerBtn');
+  const dropdown = document.getElementById('emojiPickerDropdown');
+  const input = document.getElementById('customIcon');
+  if (!btn || !dropdown) return;
+
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isVisible = dropdown.style.display === 'block';
+    dropdown.style.display = isVisible ? 'none' : 'block';
+  });
+
+  dropdown.querySelectorAll('.emoji-option').forEach(opt => {
+    opt.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (input) {
+        input.value = opt.textContent;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+      dropdown.style.display = 'none';
+    });
+  });
+
+  document.addEventListener('click', () => {
+    dropdown.style.display = 'none';
+  }, false);
+}
+
 // Función para agregar tarjeta personalizada
 
 function addCustomCard() {
@@ -6932,15 +7000,17 @@ function addCustomCard() {
 
   }
 
-  const icon = document.getElementById('customIcon').value.trim();
+  let icon = document.getElementById('customIcon').value.trim();
 
   const label = document.getElementById('customLabel').value.trim();
 
   const value = document.getElementById('customValue').value.trim();
 
-  if (!icon || !label || !value) {
+  if (!icon) icon = '📊';
 
-    showErrorMessage('Por favor completa todos los campos');
+  if (!label || !value) {
+
+    showErrorMessage('Por favor completa el título y el valor');
 
     return;
 
@@ -10221,10 +10291,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (e.target.classList.contains('modal')) {
 
-      e.target.classList.remove('active');
-      
-      // Restaurar el scroll del body cuando se cierra el modal
-      document.body.style.overflow = '';
+      const modalId = e.target.id;
+
+      if (modalId) {
+
+        hideModal(modalId);
+
+      } else {
+
+        e.target.classList.remove('active');
+
+        document.body.style.overflow = '';
+
+      }
 
     }
 
