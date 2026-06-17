@@ -4903,6 +4903,10 @@ body > header[style*="position: fixed"] {
   cursor: not-allowed;
 }
 
+#imageViewModal {
+  z-index: 1100;
+}
+
 #imageViewModal .modal-content {
   position: relative;
 }
