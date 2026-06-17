@@ -5688,11 +5688,11 @@ function renderProjectGalleryPage() {
       const galleryItem = e.target.closest('.gallery-item');
       if (!galleryItem) return;
 
-      const imageUrl = galleryItem.getAttribute('data-image-url') ||
-                       galleryItem.querySelector('img')?.getAttribute('data-image-url') ||
+      const imageUrl = galleryItem.dataset.imageUrl ||
+                       galleryItem.querySelector('img')?.dataset.imageUrl ||
                        galleryItem.querySelector('img')?.getAttribute('src');
-      const imageDescription = galleryItem.getAttribute('data-image-description') ||
-                              galleryItem.querySelector('img')?.getAttribute('data-image-description') || '';
+      const imageDescription = galleryItem.dataset.imageDescription ||
+                              galleryItem.querySelector('img')?.dataset.imageDescription || '';
       if (imageUrl) {
         showImageViewModal(imageUrl, imageDescription);
       }
