@@ -6936,6 +6936,7 @@ def api_listar_proyectos_por_tipo(request, tipo_actividad):
                     'estado_display': evento.get_estado_display() if hasattr(evento, 'get_estado_display') else evento.estado,
                     'descripcion': evento.descripcion or '',
                     'imagen_principal': imagen_url,
+                    'portada': portada_info,
                     'tarjetas_datos': obtener_tarjetas_datos(evento),
                     'personal_count': personal_count,
                     'personal_nombres': ', '.join(personal_nombres) if personal_nombres else 'Sin personal',

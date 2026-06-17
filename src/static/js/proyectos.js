@@ -874,6 +874,31 @@ function formatDate(dateString) {
   return formatter.format(date);
 }
 
+// Función para parsear fechas YYYY-MM-DD como fecha LOCAL (evita desfase UTC)
+function parseLocalDate(dateString) {
+  if (!dateString) {
+    return new Date();
+  }
+  // Si viene como ISO completo con zona horaria, usarlo directamente
+  if (dateString.includes('T') || dateString.includes(' ')) {
+    const parsed = new Date(dateString);
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed;
+    }
+  }
+  // Para formato YYYY-MM-DD, crear fecha local año, mes-1, día
+  const parts = String(dateString).split('-');
+  if (parts.length === 3) {
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10);
+    const day = parseInt(parts[2], 10);
+    if (!Number.isNaN(year) && !Number.isNaN(month) && !Number.isNaN(day)) {
+      return new Date(year, month - 1, day);
+    }
+  }
+  return new Date();
+}
+
 // Función para renderizar proyectos en el HTML
 
 function renderizarProyectosEnHTML() {
@@ -965,9 +990,9 @@ function crearTarjetaProyecto(proyecto) {
 
   card.className = 'project-card';
 
-  // Extraer mes, día y año de la fecha
+  // Extraer mes, día y año de la fecha (parseo local para evitar desfase UTC)
 
-  const fecha = new Date(proyecto.fecha || proyecto.createdDate);
+  const fecha = parseLocalDate(proyecto.fecha || proyecto.createdDate);
 
   const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
@@ -977,9 +1002,9 @@ function crearTarjetaProyecto(proyecto) {
 
   const anio = fecha.getFullYear();
 
-  // Determinar la imagen a usar
-  const placeholderSvg = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 300'><rect width='100%' height='100%' fill='%231d2531'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='%23b8c5d1' font-family='Arial' font-size='16'>Sin imagen</text></svg>";
-  
+  // Placeholder SVG sin comillas simples para no romper el onerror
+  const placeholderSvg = "data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 400 300%22><rect width=%22100%%22 height=%22100%%22 fill=%22%231d2531%22/><text x=%2250%%22 y=%2250%%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22%23b8c5d1%22 font-family=Arial font-size=16>Sin imagen</text></svg>";
+
   // Manejar diferentes formatos de portada (igual que en crearTarjetaProyectoDestacado)
   let imagenUrl = null;
   if (proyecto.portada) {
@@ -989,11 +1014,11 @@ function crearTarjetaProyecto(proyecto) {
       imagenUrl = proyecto.portada.url;
     }
   }
-  
+
   if (!imagenUrl) {
     imagenUrl = proyecto.imagen_principal || null;
   }
-  
+
   // Si no hay imagen, usar placeholder
   if (!imagenUrl) {
     imagenUrl = placeholderSvg;
@@ -1272,13 +1297,13 @@ function crearTarjetaProyectoDestacado(proyecto) {
 
   card.className = 'project-card featured-card';
 
-  // Manejar fecha de forma segura
+  // Manejar fecha de forma segura (parseo local para evitar desfase UTC)
 
   let fecha;
 
   try {
 
-    fecha = new Date(proyecto.fecha || proyecto.createdDate || new Date());
+    fecha = parseLocalDate(proyecto.fecha || proyecto.createdDate);
 
     if (isNaN(fecha.getTime())) {
 
@@ -1300,7 +1325,8 @@ function crearTarjetaProyectoDestacado(proyecto) {
 
   const anio = fecha.getFullYear() || new Date().getFullYear();
 
-  const placeholderSvg = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 300'><rect width='100%' height='100%' fill='%231d2531'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='%23b8c5d1' font-family='Arial' font-size='16'>Sin imagen</text></svg>";
+  // Placeholder SVG sin comillas simples para no romper el onerror
+  const placeholderSvg = "data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 400 300%22><rect width=%22100%%22 height=%22100%%22 fill=%22%231d2531%22/><text x=%2250%%22 y=%2250%%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22%23b8c5d1%22 font-family=Arial font-size=16>Sin imagen</text></svg>";
   const portadaUrl = proyecto.portada && proyecto.portada.url ? proyecto.portada.url : null;
 
   const imagenUrl = portadaUrl || proyecto.imagen_principal || placeholderSvg;
