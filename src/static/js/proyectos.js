@@ -6745,9 +6745,11 @@ function loadSelectedCards() {
     container.appendChild(cardElement);
   });
 
-  // Delegacion de eventos para inputs (evita re-adjuntar listeners)
+  // Delegacion de eventos para inputs y botones de eliminar (evita re-adjuntar listeners)
   if (!container._selectedCardsDelegation) {
     container._selectedCardsDelegation = true;
+    
+    // Handler para inputs (icono, título, valor)
     container.addEventListener('input', (e) => {
       const input = e.target;
       const index = parseInt(input.dataset.index, 10);
@@ -6760,6 +6762,18 @@ function loadSelectedCards() {
       } else if (input.classList.contains('card-value-input')) {
         selectedCards[index].value = input.value;
       }
+    });
+    
+    // Handler para botones de eliminar
+    container.addEventListener('click', (e) => {
+      const removeBtn = e.target.closest('.remove-card-btn');
+      if (!removeBtn) return;
+      
+      e.stopPropagation();
+      const index = parseInt(removeBtn.dataset.index, 10);
+      if (isNaN(index) || !selectedCards[index]) return;
+      
+      removeSelectedCard(index);
     });
   }
 }
@@ -6836,65 +6850,40 @@ function togglePredefinedCard(card) {
 
 function setupEditDataEventListeners() {
 
-  // Pestañas
-
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-
-    btn.addEventListener('click', (e) => {
-
-      const tab = e.target.dataset.tab;
-
-      switchTab(tab);
-
-    });
-
-  });
-
-  // Búsqueda de tarjetas
-
-  const searchInput = document.getElementById('cardSearch');
-
-  if (searchInput) {
-
-    searchInput.addEventListener('input', filterPredefinedCards);
-
-  }
-
-  // Filtro de categorías
-
-  const categoryFilter = document.getElementById('categoryFilter');
-
-  if (categoryFilter) {
-
-    categoryFilter.addEventListener('change', filterPredefinedCards);
-
-  }
-
-  // Botón de agregar tarjeta personalizada
-
-  const addCustomBtn = document.getElementById('addCustomCardBtn');
-
-  if (addCustomBtn) {
-
-    addCustomBtn.addEventListener('click', addCustomCard);
-
-  }
-
-  // Event delegation para botones de eliminar
-
-  document.addEventListener('click', (e) => {
-
-    if (e.target.closest('.remove-card-btn')) {
-
-      const index = parseInt(e.target.closest('.remove-card-btn').dataset.index);
-
-      removeSelectedCard(index);
-
+  // Pestañas (solo agregar listener una vez)
+  const tabButtons = document.querySelectorAll('.tab-btn');
+  tabButtons.forEach(btn => {
+    if (!btn._tabListenerAdded) {
+      btn.addEventListener('click', (e) => {
+        const tab = e.target.dataset.tab;
+        switchTab(tab);
+      });
+      btn._tabListenerAdded = true;
     }
-
   });
 
-  // Los event listeners para inputs de título y valor se agregan en loadSelectedCards()
+  // Búsqueda de tarjetas (solo agregar listener una vez)
+  const searchInput = document.getElementById('cardSearch');
+  if (searchInput && !searchInput._searchListenerAdded) {
+    searchInput.addEventListener('input', filterPredefinedCards);
+    searchInput._searchListenerAdded = true;
+  }
+
+  // Filtro de categorías (solo agregar listener una vez)
+  const categoryFilter = document.getElementById('categoryFilter');
+  if (categoryFilter && !categoryFilter._filterListenerAdded) {
+    categoryFilter.addEventListener('change', filterPredefinedCards);
+    categoryFilter._filterListenerAdded = true;
+  }
+
+  // Botón de agregar tarjeta personalizada (solo agregar listener una vez)
+  const addCustomBtn = document.getElementById('addCustomCardBtn');
+  if (addCustomBtn && !addCustomBtn._customListenerAdded) {
+    addCustomBtn.addEventListener('click', addCustomCard);
+    addCustomBtn._customListenerAdded = true;
+  }
+
+  // Los event listeners para inputs y botones de eliminar se agregan en loadSelectedCards()
 
 }
 
