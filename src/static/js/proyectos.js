@@ -13873,8 +13873,9 @@ document.addEventListener('DOMContentLoaded', () => {
   if(sortSelect) {
     sortSelect.addEventListener('change', () => {
       const proj = getCurrentProject();
-      if(proj && proj.cambios) {
-        renderProgressTimeline(proj.cambios, sortSelect.value);
+      if(proj) {
+        const cambiosDelProyecto = proj.cambios || proj.changes || [];
+        renderProgressTimeline(cambiosDelProyecto, sortSelect.value);
       }
     });
   }
@@ -13895,8 +13896,9 @@ function openProgressModal() {
   modal.classList.add('active');
   
   const sortOrder = document.getElementById('progressSortSelect').value || 'asc';
-  renderProgressTimeline(proj.cambios || [], sortOrder);
-  renderProgressStats(proj.cambios || []);
+  const cambiosDelProyecto = proj.cambios || proj.changes || [];
+  renderProgressTimeline(cambiosDelProyecto, sortOrder);
+  renderProgressStats(cambiosDelProyecto);
 }
 
 function closeProgressModal() {
@@ -13912,7 +13914,7 @@ function renderProgressTimeline(cambios, sortOrder = 'asc') {
   if(!container) return;
   
   if(!cambios || cambios.length === 0) {
-    container.innerHTML = '<div style="color:#94a3b8; text-align:center; padding:40px;">No hay cambios registrados en este proyecto.</div>';
+    container.innerHTML = '<div style="color:#94a3b8; text-align:center; padding:40px; font-size:1.1rem;">Este proyecto aún no tiene avances registrados.</div>';
     return;
   }
 
