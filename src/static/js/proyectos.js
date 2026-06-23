@@ -13872,8 +13872,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   if(sortSelect) {
     sortSelect.addEventListener('change', () => {
-      if(currentProject && currentProject.cambios) {
-        renderProgressTimeline(currentProject.cambios, sortSelect.value);
+      const proj = getCurrentProject();
+      if(proj && proj.cambios) {
+        renderProgressTimeline(proj.cambios, sortSelect.value);
       }
     });
   }
@@ -13887,14 +13888,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function openProgressModal() {
   const modal = document.getElementById('progressModal');
-  if(!modal || !currentProject) return;
+  const proj = getCurrentProject();
+  if(!modal || !proj) return;
   
   document.body.style.overflow = 'hidden';
   modal.classList.add('active');
   
   const sortOrder = document.getElementById('progressSortSelect').value || 'asc';
-  renderProgressTimeline(currentProject.cambios || [], sortOrder);
-  renderProgressStats(currentProject.cambios || []);
+  renderProgressTimeline(proj.cambios || [], sortOrder);
+  renderProgressStats(proj.cambios || []);
 }
 
 function closeProgressModal() {
