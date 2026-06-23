@@ -13896,9 +13896,30 @@ function openProgressModal() {
   modal.classList.add('active');
   
   const sortOrder = document.getElementById('progressSortSelect').value || 'asc';
-  const cambiosDelProyecto = proj.cambios || proj.changes || [];
-  renderProgressTimeline(cambiosDelProyecto, sortOrder);
-  renderProgressStats(cambiosDelProyecto);
+  
+  // Asegurarnos de que cambios sea un arreglo válido
+  let cambiosRaw = proj.cambios || proj.changes || [];
+  if (!Array.isArray(cambiosRaw)) {
+    // Si por alguna razón es un objeto o cadena, intentar convertirlo o forzarlo a arreglo vacío
+    if (typeof cambiosRaw === 'object' && Object.values(cambiosRaw).length > 0) {
+      cambiosRaw = Object.values(cambiosRaw);
+    } else {
+      cambiosRaw = [];
+    }
+  }
+  
+  const cambiosDelProyecto = cambiosRaw;
+  
+  try {
+    renderProgressTimeline(cambiosDelProyecto, sortOrder);
+    renderProgressStats(cambiosDelProyecto);
+  } catch (error) {
+    console.error('Error al renderizar el modal de progreso:', error);
+    const container = document.getElementById('progressTimeline');
+    if (container) {
+      container.innerHTML = '<div style="color:#ef4444; text-align:center; padding:40px;">Ocurrió un error al cargar los datos. Por favor, recarga la página.</div>';
+    }
+  }
 }
 
 function closeProgressModal() {
@@ -13913,16 +13934,17 @@ function renderProgressTimeline(cambios, sortOrder = 'asc') {
   const container = document.getElementById('progressTimeline');
   if(!container) return;
   
-  if(!cambios || cambios.length === 0) {
+  if(!Array.isArray(cambios) || cambios.length === 0) {
     container.innerHTML = '<div style="color:#94a3b8; text-align:center; padding:40px; font-size:1.1rem;">Este proyecto aún no tiene avances registrados.</div>';
     return;
   }
 
   // Clonar y ordenar (asc = más antiguo primero, desc = más reciente primero)
   let sortedCambios = [...cambios].sort((a, b) => {
-    const dA = new Date(a.fecha_cambio).getTime();
-    const dB = new Date(b.fecha_cambio).getTime();
-    return sortOrder === 'asc' ? dA - dB : dB - dA;
+    // Manejo defensivo de fechas
+    const fechaA = a.fecha_cambio ? new Date(a.fecha_cambio).getTime() : 0;
+    const fechaB = b.fecha_cambio ? new Date(b.fecha_cambio).getTime() : 0;
+    return sortOrder === 'asc' ? fechaA - fechaB : fechaB - fechaA;
   });
 
   let html = '';
@@ -13931,7 +13953,9 @@ function renderProgressTimeline(cambios, sortOrder = 'asc') {
   const months = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
   sortedCambios.forEach(cambio => {
-    const d = new Date(cambio.fecha_cambio);
+    let d = new Date(cambio.fecha_cambio);
+    if (isNaN(d.getTime())) d = new Date(); // Fallback si la fecha es inválida
+    
     const monthYear = `${months[d.getMonth()]} ${d.getFullYear()}`;
     
     // Separador de mes
@@ -13949,21 +13973,20 @@ function renderProgressTimeline(cambios, sortOrder = 'asc') {
     
     // Fotos
     let photosHtml = '';
-    if(cambio.evidencias_dict) {
-      const photos = Object.values(cambio.evidencias_dict).filter(e => e.es_imagen);
+    if(cambio.evidencias_dict && typeof cambio.evidencias_dict === 'object') {
+      const photos = Object.values(cambio.evidencias_dict).filter(e => e && e.es_imagen);
       if(photos.length > 0) {
         photosHtml = '<div class="timeline-photos">';
         photos.slice(0, 4).forEach((p, i) => {
-          // Si hay más de 4, poner un overlay en el último
           if(i === 3 && photos.length > 4) {
             photosHtml += `
-              <div style="position:relative; cursor:pointer;" onclick="openProgressLightbox('${p.url}', '${p.descripcion || p.nombre || ''}')">
-                <img src="${p.url}" class="timeline-photo" alt="Evidencia" style="opacity:0.5;">
+              <div style="position:relative; cursor:pointer;" onclick="openProgressLightbox('${p.url || ''}', '${(p.descripcion || p.nombre || '').replace(/'/g, "\\'")}')">
+                <img src="${p.url || ''}" class="timeline-photo" alt="Evidencia" style="opacity:0.5;">
                 <div style="position:absolute; top:0;left:0;right:0;bottom:0; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:1.2rem; pointer-events:none;">+${photos.length - 4}</div>
               </div>
             `;
           } else {
-            photosHtml += `<img src="${p.url}" class="timeline-photo" alt="Evidencia" onclick="openProgressLightbox('${p.url}', '${p.descripcion || p.nombre || ''}')">`;
+            photosHtml += `<img src="${p.url || ''}" class="timeline-photo" alt="Evidencia" onclick="openProgressLightbox('${p.url || ''}', '${(p.descripcion || p.nombre || '').replace(/'/g, "\\'")}')">`;
           }
         });
         photosHtml += '</div>';
@@ -13972,14 +13995,16 @@ function renderProgressTimeline(cambios, sortOrder = 'asc') {
 
     // Chips (Comunidades y Responsables)
     let metaHtml = '<div class="timeline-meta">';
-    if(cambio.comunidades && cambio.comunidades.length > 0) {
+    if(Array.isArray(cambio.comunidades) && cambio.comunidades.length > 0) {
       cambio.comunidades.forEach(com => {
-        metaHtml += `<span class="timeline-chip community"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg> ${com}</span>`;
+        const comName = typeof com === 'string' ? com : (com.nombre || 'Comunidad');
+        metaHtml += `<span class="timeline-chip community"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg> ${comName}</span>`;
       });
     }
-    if(cambio.colaboradores && cambio.colaboradores.length > 0) {
+    if(Array.isArray(cambio.colaboradores) && cambio.colaboradores.length > 0) {
       cambio.colaboradores.forEach(col => {
-        metaHtml += `<span class="timeline-chip"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg> ${col.nombre}</span>`;
+        const colName = col.nombre || 'Personal';
+        metaHtml += `<span class="timeline-chip"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg> ${colName}</span>`;
       });
     }
     metaHtml += '</div>';
@@ -14002,7 +14027,7 @@ function renderProgressStats(cambios) {
   const container = document.getElementById('progressStats');
   if(!container) return;
 
-  if(!cambios || cambios.length === 0) {
+  if(!Array.isArray(cambios) || cambios.length === 0) {
     container.innerHTML = '<div style="color:#94a3b8; text-align:center;">Sin estadísticas.</div>';
     return;
   }
@@ -14013,17 +14038,18 @@ function renderProgressStats(cambios) {
   // 2. Fotos totales
   let totalFotos = 0;
   cambios.forEach(c => {
-    if(c.evidencias_dict) {
-      totalFotos += Object.values(c.evidencias_dict).filter(e => e.es_imagen).length;
+    if(c.evidencias_dict && typeof c.evidencias_dict === 'object') {
+      totalFotos += Object.values(c.evidencias_dict).filter(e => e && e.es_imagen).length;
     }
   });
 
   // 3. Distribución por comunidades
   const commCounts = {};
   cambios.forEach(c => {
-    if(c.comunidades) {
+    if(Array.isArray(c.comunidades)) {
       c.comunidades.forEach(com => {
-        commCounts[com] = (commCounts[com] || 0) + 1;
+        const comName = typeof com === 'string' ? com : (com.nombre || 'Comunidad');
+        commCounts[comName] = (commCounts[comName] || 0) + 1;
       });
     }
   });
@@ -14032,9 +14058,10 @@ function renderProgressStats(cambios) {
   // 4. Personal más activo
   const persCounts = {};
   cambios.forEach(c => {
-    if(c.colaboradores) {
+    if(Array.isArray(c.colaboradores)) {
       c.colaboradores.forEach(col => {
-        persCounts[col.nombre] = (persCounts[col.nombre] || 0) + 1;
+        const colName = col.nombre || 'Personal';
+        persCounts[colName] = (persCounts[colName] || 0) + 1;
       });
     }
   });
