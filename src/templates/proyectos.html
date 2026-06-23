@@ -6,7 +6,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{% static 'css/styles.css' %}">
-  <link rel="stylesheet" href="{% static 'css/proyectos.css' %}?v=47">
+  <link rel="stylesheet" href="{% static 'css/proyectos.css' %}?v=48">
   <link rel="stylesheet" href="{% static 'css/login-modal.css' %}">
   <link rel="stylesheet" href="{% static 'css/gestioneseventos.css' %}">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -288,10 +288,20 @@
 
         <!-- Cambios Realizados -->
         <div class="detail-changes-section">
-          <div class="section-header">
+          <div class="section-header" style="display:flex; justify-content:space-between; align-items:center;">
             <h3 class="changes-title">Cambios Realizados</h3>
+            <div class="section-actions" style="display:flex; gap:10px; align-items:center;">
+              <button class="btn-progress-view" id="viewProgressBtn" style="background:rgba(59,130,246,0.1); color:#3b82f6; border:1px solid rgba(59,130,246,0.3); padding:8px 16px; border-radius:8px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:8px; transition:all 0.2s;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                  <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+                Ver Progreso Completo
+              </button>
             {% if es_admin or es_personal %}
-            <div class="section-actions">
               <button class="btn-edit-item" id="addChangeBtn">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -299,8 +309,8 @@
                 </svg>
                 Agregar Cambio
               </button>
-            </div>
             {% endif %}
+            </div>
           </div>
           <div class="changes-timeline" id="detailChanges">
             <!-- Los cambios se cargarán dinámicamente -->
@@ -1096,8 +1106,70 @@
       </div>
     </div>
   </div>
+
+  <!-- Modal para Progreso Completo -->
+  <div id="progressModal" class="progress-modal-overlay">
+    <div class="progress-modal-container">
+      <div class="progress-modal-header">
+        <div>
+          <h2 class="progress-modal-title" id="progressModalTitle">Progreso del Proyecto</h2>
+          <p class="progress-modal-subtitle">Línea de tiempo de avances y estadísticas</p>
+        </div>
+        <button class="progress-modal-close" id="closeProgressModal">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="progress-modal-body" id="progressModalBody">
+        <div class="progress-modal-toolbar">
+          <div class="progress-sort-control">
+            <span style="color:rgba(160,190,220,0.7); font-size:0.9rem;">Ordenar por:</span>
+            <select id="progressSortSelect" class="progress-sort-select">
+              <option value="asc">Más antiguo primero</option>
+              <option value="desc">Más reciente primero</option>
+            </select>
+          </div>
+        </div>
+        <div class="progress-content-grid">
+          <div class="progress-timeline-column">
+            <h3 class="progress-section-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              Línea de Tiempo
+            </h3>
+            <section class="progress-timeline-section" id="progressTimeline">
+              <!-- Se rellena dinámicamente -->
+            </section>
+          </div>
+          <div class="progress-stats-column">
+            <h3 class="progress-section-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"></path></svg>
+              Estadísticas
+            </h3>
+            <section class="progress-stats-section" id="progressStats">
+              <!-- Se rellena dinámicamente -->
+            </section>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lightbox simple para el modal de progreso -->
+  <div id="progressLightbox" class="progress-lightbox">
+    <button class="progress-lightbox-close" id="closeProgressLightbox">
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
+    <img id="progressLightboxImg" class="progress-lightbox-img" src="" alt="Vista completa">
+    <div id="progressLightboxDesc" class="progress-lightbox-desc"></div>
+  </div>
+
 {% endblock %}
 
 {% block extra_js %}
-  <script src="{% static 'js/proyectos.js' %}?v=63"></script>
+  <script src="{% static 'js/proyectos.js' %}?v=64"></script>
 {% endblock %}

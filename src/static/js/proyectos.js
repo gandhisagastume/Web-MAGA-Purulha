@@ -13855,3 +13855,275 @@ document.addEventListener('click', function(event) {
     return;
   }
 });
+
+/* ======= MODAL DE PROGRESO COMPLETO ======= */
+document.addEventListener('DOMContentLoaded', () => {
+  const viewBtn = document.getElementById('viewProgressBtn');
+  const closeBtn = document.getElementById('closeProgressModal');
+  const modal = document.getElementById('progressModal');
+  const sortSelect = document.getElementById('progressSortSelect');
+  
+  if(viewBtn) viewBtn.addEventListener('click', openProgressModal);
+  if(closeBtn) closeBtn.addEventListener('click', closeProgressModal);
+  if(modal) {
+    modal.addEventListener('click', (e) => {
+      if(e.target === modal) closeProgressModal();
+    });
+  }
+  if(sortSelect) {
+    sortSelect.addEventListener('change', () => {
+      if(currentProject && currentProject.cambios) {
+        renderProgressTimeline(currentProject.cambios, sortSelect.value);
+      }
+    });
+  }
+
+  // Lightbox
+  const lbClose = document.getElementById('closeProgressLightbox');
+  if(lbClose) {
+    lbClose.addEventListener('click', closeProgressLightbox);
+  }
+});
+
+function openProgressModal() {
+  const modal = document.getElementById('progressModal');
+  if(!modal || !currentProject) return;
+  
+  document.body.style.overflow = 'hidden';
+  modal.classList.add('active');
+  
+  const sortOrder = document.getElementById('progressSortSelect').value || 'asc';
+  renderProgressTimeline(currentProject.cambios || [], sortOrder);
+  renderProgressStats(currentProject.cambios || []);
+}
+
+function closeProgressModal() {
+  const modal = document.getElementById('progressModal');
+  if(modal) {
+    modal.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+}
+
+function renderProgressTimeline(cambios, sortOrder = 'asc') {
+  const container = document.getElementById('progressTimeline');
+  if(!container) return;
+  
+  if(!cambios || cambios.length === 0) {
+    container.innerHTML = '<div style="color:#94a3b8; text-align:center; padding:40px;">No hay cambios registrados en este proyecto.</div>';
+    return;
+  }
+
+  // Clonar y ordenar (asc = más antiguo primero, desc = más reciente primero)
+  let sortedCambios = [...cambios].sort((a, b) => {
+    const dA = new Date(a.fecha_cambio).getTime();
+    const dB = new Date(b.fecha_cambio).getTime();
+    return sortOrder === 'asc' ? dA - dB : dB - dA;
+  });
+
+  let html = '';
+  let currentMonthYear = '';
+
+  const months = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+  sortedCambios.forEach(cambio => {
+    const d = new Date(cambio.fecha_cambio);
+    const monthYear = `${months[d.getMonth()]} ${d.getFullYear()}`;
+    
+    // Separador de mes
+    if(monthYear !== currentMonthYear) {
+      html += `
+        <div class="timeline-month-divider">
+          <span>${monthYear}</span>
+        </div>
+      `;
+      currentMonthYear = monthYear;
+    }
+
+    // Fecha formateada corta
+    const dateStr = `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear()}`;
+    
+    // Fotos
+    let photosHtml = '';
+    if(cambio.evidencias_dict) {
+      const photos = Object.values(cambio.evidencias_dict).filter(e => e.es_imagen);
+      if(photos.length > 0) {
+        photosHtml = '<div class="timeline-photos">';
+        photos.slice(0, 4).forEach((p, i) => {
+          // Si hay más de 4, poner un overlay en el último
+          if(i === 3 && photos.length > 4) {
+            photosHtml += `
+              <div style="position:relative; cursor:pointer;" onclick="openProgressLightbox('${p.url}', '${p.descripcion || p.nombre || ''}')">
+                <img src="${p.url}" class="timeline-photo" alt="Evidencia" style="opacity:0.5;">
+                <div style="position:absolute; top:0;left:0;right:0;bottom:0; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:1.2rem; pointer-events:none;">+${photos.length - 4}</div>
+              </div>
+            `;
+          } else {
+            photosHtml += `<img src="${p.url}" class="timeline-photo" alt="Evidencia" onclick="openProgressLightbox('${p.url}', '${p.descripcion || p.nombre || ''}')">`;
+          }
+        });
+        photosHtml += '</div>';
+      }
+    }
+
+    // Chips (Comunidades y Responsables)
+    let metaHtml = '<div class="timeline-meta">';
+    if(cambio.comunidades && cambio.comunidades.length > 0) {
+      cambio.comunidades.forEach(com => {
+        metaHtml += `<span class="timeline-chip community"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg> ${com}</span>`;
+      });
+    }
+    if(cambio.colaboradores && cambio.colaboradores.length > 0) {
+      cambio.colaboradores.forEach(col => {
+        metaHtml += `<span class="timeline-chip"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg> ${col.nombre}</span>`;
+      });
+    }
+    metaHtml += '</div>';
+
+    html += `
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div class="timeline-date">${dateStr}</div>
+        <div class="timeline-desc">${cambio.descripcion || 'Sin descripción.'}</div>
+        ${photosHtml}
+        ${metaHtml}
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+}
+
+function renderProgressStats(cambios) {
+  const container = document.getElementById('progressStats');
+  if(!container) return;
+
+  if(!cambios || cambios.length === 0) {
+    container.innerHTML = '<div style="color:#94a3b8; text-align:center;">Sin estadísticas.</div>';
+    return;
+  }
+
+  // 1. Total avances
+  const totalAvances = cambios.length;
+
+  // 2. Fotos totales
+  let totalFotos = 0;
+  cambios.forEach(c => {
+    if(c.evidencias_dict) {
+      totalFotos += Object.values(c.evidencias_dict).filter(e => e.es_imagen).length;
+    }
+  });
+
+  // 3. Distribución por comunidades
+  const commCounts = {};
+  cambios.forEach(c => {
+    if(c.comunidades) {
+      c.comunidades.forEach(com => {
+        commCounts[com] = (commCounts[com] || 0) + 1;
+      });
+    }
+  });
+  const topComms = Object.entries(commCounts).sort((a,b) => b[1] - a[1]).slice(0, 5);
+
+  // 4. Personal más activo
+  const persCounts = {};
+  cambios.forEach(c => {
+    if(c.colaboradores) {
+      c.colaboradores.forEach(col => {
+        persCounts[col.nombre] = (persCounts[col.nombre] || 0) + 1;
+      });
+    }
+  });
+  const topPers = Object.entries(persCounts).sort((a,b) => b[1] - a[1]).slice(0, 3);
+
+  let html = `
+    <!-- Tarjeta Totales -->
+    <div class="stat-card">
+      <h4 class="stat-card-title">Resumen</h4>
+      <div class="stat-number-row" style="margin-bottom:12px;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+        <span class="stat-number">${totalAvances}</span>
+        <span style="color:#94a3b8; font-size:0.9rem;">Avances registrados</span>
+      </div>
+      <div class="stat-number-row">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+        <span class="stat-number" style="color:#10b981;">${totalFotos}</span>
+        <span style="color:#94a3b8; font-size:0.9rem;">Evidencias fotográficas</span>
+      </div>
+    </div>
+  `;
+
+  // Tarjeta Comunidades
+  if(topComms.length > 0) {
+    const maxComm = topComms[0][1];
+    let commsHtml = '';
+    topComms.forEach(([name, count]) => {
+      const pct = (count / maxComm) * 100;
+      commsHtml += `
+        <div class="stat-bar-row">
+          <div class="stat-bar-label" title="${name}">${name}</div>
+          <div class="stat-bar-track">
+            <div class="stat-bar-fill" style="width:${pct}%; background:#10b981;"></div>
+          </div>
+          <div class="stat-bar-value">${count}</div>
+        </div>
+      `;
+    });
+    html += `
+      <div class="stat-card">
+        <h4 class="stat-card-title">Ubicaciones más frecuentes</h4>
+        <div class="stat-bar-container">${commsHtml}</div>
+      </div>
+    `;
+  }
+
+  // Tarjeta Personal
+  if(topPers.length > 0) {
+    const maxPers = topPers[0][1];
+    let persHtml = '';
+    topPers.forEach(([name, count]) => {
+      const pct = (count / maxPers) * 100;
+      persHtml += `
+        <div class="stat-bar-row">
+          <div class="stat-bar-label" title="${name}">${name}</div>
+          <div class="stat-bar-track">
+            <div class="stat-bar-fill" style="width:${pct}%;"></div>
+          </div>
+          <div class="stat-bar-value">${count}</div>
+        </div>
+      `;
+    });
+    html += `
+      <div class="stat-card">
+        <h4 class="stat-card-title">Personal con más avances</h4>
+        <div class="stat-bar-container">${persHtml}</div>
+      </div>
+    `;
+  }
+
+  container.innerHTML = html;
+}
+
+// Lightbox functions
+function openProgressLightbox(url, desc) {
+  const lb = document.getElementById('progressLightbox');
+  const img = document.getElementById('progressLightboxImg');
+  const descEl = document.getElementById('progressLightboxDesc');
+  
+  if(!lb || !img) return;
+  
+  img.src = url;
+  descEl.textContent = desc || '';
+  lb.classList.add('active');
+}
+
+function closeProgressLightbox() {
+  const lb = document.getElementById('progressLightbox');
+  if(lb) {
+    lb.classList.remove('active');
+    setTimeout(() => {
+      const img = document.getElementById('progressLightboxImg');
+      if(img) img.src = '';
+    }, 200);
+  }
+}
