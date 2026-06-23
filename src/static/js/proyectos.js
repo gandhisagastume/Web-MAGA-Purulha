@@ -5923,6 +5923,14 @@ document.addEventListener('click', (event) => {
 
 // Función para manejar selección de imagen
 
+// Función para manejar imágenes arrastradas al drop zone
+function handleDroppedImages(fileList) {
+  if (!fileList || !fileList.length) return;
+  // Simula el evento change reutilizando la lógica de handleImageSelect
+  const syntheticEvent = { target: { files: fileList } };
+  handleImageSelect(syntheticEvent);
+}
+
 function handleImageSelect(event) {
   const input = event.target;
   const files = Array.from(input.files || []);

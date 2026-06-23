@@ -6,7 +6,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{% static 'css/styles.css' %}">
-  <link rel="stylesheet" href="{% static 'css/proyectos.css' %}?v=46">
+  <link rel="stylesheet" href="{% static 'css/proyectos.css' %}?v=47">
   <link rel="stylesheet" href="{% static 'css/login-modal.css' %}">
   <link rel="stylesheet" href="{% static 'css/gestioneseventos.css' %}">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -472,18 +472,23 @@
       <div class="modal-body">
         <div class="form-group">
           <label class="form-label">Seleccionar Imagen</label>
-          <div class="file-upload">
-            <input type="file" id="imageFileInput" accept="image/*" class="file-input" multiple>
-            <label for="imageFileInput" class="file-label">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                <polyline points="21,15 16,10 5,21"></polyline>
-              </svg>
-              <span>Seleccionar imagen</span>
-            </label>
+          <!-- Input oculto — disparado programáticamente por el área de clic de abajo -->
+          <input type="file" id="imageFileInput" accept="image/*" multiple style="display:none;">
+          <!-- Zona de clic/drag — usa onclick directo para evitar problemas de z-index o stacking context -->
+          <div id="imageDropZone"
+            style="border:2px dashed rgba(255,255,255,0.2); border-radius:10px; padding:28px 20px; text-align:center; cursor:pointer; transition:border-color 0.2s, background 0.2s; background:rgba(255,255,255,0.03);"
+            onclick="document.getElementById('imageFileInput').click()"
+            ondragover="event.preventDefault(); this.style.borderColor='#007bff'; this.style.background='rgba(0,123,255,0.07)';"
+            ondragleave="this.style.borderColor='rgba(255,255,255,0.2)'; this.style.background='rgba(255,255,255,0.03)';"
+            ondrop="event.preventDefault(); this.style.borderColor='rgba(255,255,255,0.2)'; this.style.background='rgba(255,255,255,0.03)'; handleDroppedImages(event.dataTransfer.files);">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="rgba(160,190,220,0.6)" stroke-width="1.5" style="margin-bottom:10px; display:block; margin-left:auto; margin-right:auto;">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <circle cx="8.5" cy="8.5" r="1.5"></circle>
+              <polyline points="21,15 16,10 5,21"></polyline>
+            </svg>
+            <div style="font-size:0.9rem; color:rgba(160,190,220,0.8); margin-bottom:6px;">Haz clic aquí o arrastra imágenes</div>
+            <div style="font-size:0.78rem; color:rgba(160,190,220,0.45);">Puedes seleccionar varias imágenes y añadir una descripción a cada una.</div>
           </div>
-          <p class="form-helper-text">Puedes seleccionar varias imágenes y añadir una descripción a cada una.</p>
           <div class="image-preview" id="imagePreview"></div>
         </div>
       </div>
@@ -1094,5 +1099,5 @@
 {% endblock %}
 
 {% block extra_js %}
-  <script src="{% static 'js/proyectos.js' %}?v=62"></script>
+  <script src="{% static 'js/proyectos.js' %}?v=63"></script>
 {% endblock %}
