@@ -10464,41 +10464,84 @@ function renderCommunitiesList() {
 
     c.region.toLowerCase().includes(searchTerm) ||
 
-    c.codigo.toLowerCase().includes(searchTerm)
+    (c.codigo && c.codigo.toLowerCase().includes(searchTerm))
 
   );
 
   if (filtered.length === 0) {
 
-    communitiesList.innerHTML = '<p style="color: #6c757d; text-align: center; padding: 20px;">No se encontraron comunidades.</p>';
+    communitiesList.innerHTML = '<p style="color:rgba(160,190,220,0.55); text-align:center; padding:28px 16px; margin:0; font-size:0.88rem;">No se encontraron comunidades.</p>';
 
     return;
 
   }
 
-  filtered.forEach(community => {
+  filtered.forEach((community, index) => {
 
     const isSelected = selectedCommunityIds.has(community.id);
 
-    const item = document.createElement('div');
+    const item = document.createElement('label');
 
-    item.className = 'community-item' + (isSelected ? ' selected' : '');
+    item.htmlFor = 'community-cb-' + community.id;
 
     item.dataset.communityId = community.id;
 
-    item.innerHTML = `
+    item.style.cssText = [
+      'display:flex',
+      'align-items:center',
+      'gap:12px',
+      'padding:11px 16px',
+      'cursor:pointer',
+      'border-bottom:1px solid rgba(255,255,255,0.06)',
+      'transition:background 0.15s',
+      'background:' + (isSelected ? 'rgba(99,179,237,0.12)' : 'transparent'),
+    ].join(';');
 
-      <input type="checkbox" id="community-${community.id}" value="${community.id}" ${isSelected ? 'checked' : ''}>
+    if (index === filtered.length - 1) {
+      item.style.borderBottom = 'none';
+    }
 
-      <div class="community-info">
+    item.addEventListener('mouseenter', () => {
+      if (!selectedCommunityIds.has(community.id)) item.style.background = 'rgba(255,255,255,0.05)';
+    });
+    item.addEventListener('mouseleave', () => {
+      item.style.background = selectedCommunityIds.has(community.id) ? 'rgba(99,179,237,0.12)' : 'transparent';
+    });
 
-        <div class="community-name">${escapeHtml(community.name)}</div>
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.id = 'community-cb-' + community.id;
+    cb.value = community.id;
+    cb.checked = isSelected;
+    cb.style.cssText = 'width:17px; height:17px; flex-shrink:0; accent-color:#63b3ed; cursor:pointer; margin:0;';
 
-        <div class="community-region">${escapeHtml(community.region)}${community.codigo ? ` · ${escapeHtml(community.codigo)}` : ''}</div>
+    cb.addEventListener('change', () => {
+      if (cb.checked) {
+        selectedCommunityIds.add(community.id);
+        item.style.background = 'rgba(99,179,237,0.12)';
+      } else {
+        selectedCommunityIds.delete(community.id);
+        item.style.background = 'transparent';
+      }
+      renderSelectedCommunityChips();
+    });
 
-      </div>
+    const info = document.createElement('div');
+    info.style.cssText = 'flex:1; min-width:0;';
 
-    `;
+    const nameEl = document.createElement('div');
+    nameEl.style.cssText = 'font-size:0.9rem; font-weight:600; color:#eaf2ff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;';
+    nameEl.textContent = community.name;
+
+    const regionEl = document.createElement('div');
+    regionEl.style.cssText = 'font-size:0.78rem; color:rgba(160,190,220,0.7); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;';
+    regionEl.textContent = community.region + (community.codigo ? ' · ' + community.codigo : '');
+
+    info.appendChild(nameEl);
+    info.appendChild(regionEl);
+
+    item.appendChild(cb);
+    item.appendChild(info);
 
     communitiesList.appendChild(item);
 
@@ -10516,7 +10559,7 @@ function renderSelectedCommunityChips() {
 
   if (selectedCommunityIds.size === 0) {
 
-    container.innerHTML = '<p class="selected-communities-empty">No hay comunidades seleccionadas.</p>';
+    container.innerHTML = '<p style="margin:0; color:rgba(160,190,220,0.55); font-size:0.82rem; align-self:center;">No hay comunidades seleccionadas.</p>';
 
     return;
 
@@ -10530,27 +10573,18 @@ function renderSelectedCommunityChips() {
 
     const chip = document.createElement('div');
 
-    chip.className = 'community-chip';
+    chip.style.cssText = 'display:inline-flex; align-items:center; gap:6px; padding:4px 10px 4px 12px; background:rgba(99,179,237,0.18); border:1px solid rgba(99,179,237,0.35); border-radius:20px; font-size:0.8rem; color:#cce8ff; white-space:nowrap;';
 
-    chip.innerHTML = `
+    const label = document.createElement('span');
+    label.textContent = community.name;
 
-      <span>${escapeHtml(community.name)}</span>
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.title = 'Quitar';
+    removeBtn.style.cssText = 'background:none; border:none; padding:0; cursor:pointer; color:rgba(160,190,220,0.8); display:flex; align-items:center; line-height:1;';
+    removeBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
 
-      <button type="button" data-community-id="${community.id}" title="Quitar comunidad">
-
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-
-          <line x1="18" y1="6" x2="6" y2="18"></line>
-
-          <line x1="6" y1="6" x2="18" y2="18"></line>
-
-        </svg>
-
-      </button>
-
-    `;
-
-    chip.querySelector('button').addEventListener('click', (e) => {
+    removeBtn.addEventListener('click', (e) => {
 
       e.stopPropagation();
 
@@ -10562,6 +10596,8 @@ function renderSelectedCommunityChips() {
 
     });
 
+    chip.appendChild(label);
+    chip.appendChild(removeBtn);
     container.appendChild(chip);
 
   });
