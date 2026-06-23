@@ -13973,8 +13973,9 @@ function renderProgressTimeline(cambios, sortOrder = 'asc') {
     
     // Fotos
     let photosHtml = '';
-    if(cambio.evidencias_dict && typeof cambio.evidencias_dict === 'object') {
-      const photos = Object.values(cambio.evidencias_dict).filter(e => e && e.es_imagen);
+    const evidenciasArray = Array.isArray(cambio.evidencias) ? cambio.evidencias : [];
+    if(evidenciasArray.length > 0) {
+      const photos = evidenciasArray.filter(e => e && e.es_imagen);
       if(photos.length > 0) {
         photosHtml = '<div class="timeline-photos">';
         photos.slice(0, 4).forEach((p, i) => {
@@ -13995,15 +13996,31 @@ function renderProgressTimeline(cambios, sortOrder = 'asc') {
 
     // Chips (Comunidades y Responsables)
     let metaHtml = '<div class="timeline-meta">';
-    if(Array.isArray(cambio.comunidades) && cambio.comunidades.length > 0) {
-      cambio.comunidades.forEach(com => {
+    // ... handling strings in case it's a comma separated string
+    let comunidadesArray = [];
+    if (typeof cambio.comunidades === 'string') {
+      comunidadesArray = cambio.comunidades.split(',').map(s => s.trim()).filter(s => s);
+    } else if (Array.isArray(cambio.comunidades)) {
+      comunidadesArray = cambio.comunidades;
+    }
+    
+    if(comunidadesArray.length > 0) {
+      comunidadesArray.forEach(com => {
         const comName = typeof com === 'string' ? com : (com.nombre || 'Comunidad');
         metaHtml += `<span class="timeline-chip community"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg> ${comName}</span>`;
       });
     }
-    if(Array.isArray(cambio.colaboradores) && cambio.colaboradores.length > 0) {
-      cambio.colaboradores.forEach(col => {
-        const colName = col.nombre || 'Personal';
+
+    let responsablesArray = [];
+    if (typeof cambio.responsables_display === 'string') {
+      responsablesArray = cambio.responsables_display.split(',').map(s => s.trim()).filter(s => s);
+    } else if (Array.isArray(cambio.colaboradores)) {
+      responsablesArray = cambio.colaboradores;
+    }
+
+    if(responsablesArray.length > 0) {
+      responsablesArray.forEach(col => {
+        const colName = typeof col === 'string' ? col : (col.nombre || 'Personal');
         metaHtml += `<span class="timeline-chip"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg> ${colName}</span>`;
       });
     }
@@ -14038,32 +14055,40 @@ function renderProgressStats(cambios) {
   // 2. Fotos totales
   let totalFotos = 0;
   cambios.forEach(c => {
-    if(c.evidencias_dict && typeof c.evidencias_dict === 'object') {
-      totalFotos += Object.values(c.evidencias_dict).filter(e => e && e.es_imagen).length;
+    if(Array.isArray(c.evidencias)) {
+      totalFotos += c.evidencias.filter(e => e && e.es_imagen).length;
     }
   });
 
   // 3. Distribución por comunidades
   const commCounts = {};
   cambios.forEach(c => {
-    if(Array.isArray(c.comunidades)) {
-      c.comunidades.forEach(com => {
-        const comName = typeof com === 'string' ? com : (com.nombre || 'Comunidad');
-        commCounts[comName] = (commCounts[comName] || 0) + 1;
-      });
+    let comunidadesArray = [];
+    if (typeof c.comunidades === 'string') {
+      comunidadesArray = c.comunidades.split(',').map(s => s.trim()).filter(s => s);
+    } else if (Array.isArray(c.comunidades)) {
+      comunidadesArray = c.comunidades;
     }
+    comunidadesArray.forEach(com => {
+      const comName = typeof com === 'string' ? com : (com.nombre || 'Comunidad');
+      commCounts[comName] = (commCounts[comName] || 0) + 1;
+    });
   });
-  const topComms = Object.entries(commCounts).sort((a,b) => b[1] - a[1]).slice(0, 5);
+  const topComms = Object.entries(commCounts).sort((a,b) => b[1] - a[1]);
 
   // 4. Personal más activo
   const persCounts = {};
   cambios.forEach(c => {
-    if(Array.isArray(c.colaboradores)) {
-      c.colaboradores.forEach(col => {
-        const colName = col.nombre || 'Personal';
-        persCounts[colName] = (persCounts[colName] || 0) + 1;
-      });
+    let responsablesArray = [];
+    if (typeof c.responsables_display === 'string') {
+      responsablesArray = c.responsables_display.split(',').map(s => s.trim()).filter(s => s);
+    } else if (Array.isArray(c.colaboradores)) {
+      responsablesArray = c.colaboradores;
     }
+    responsablesArray.forEach(col => {
+      const colName = typeof col === 'string' ? col : (col.nombre || 'Personal');
+      persCounts[colName] = (persCounts[colName] || 0) + 1;
+    });
   });
   const topPers = Object.entries(persCounts).sort((a,b) => b[1] - a[1]).slice(0, 3);
 
@@ -14084,26 +14109,48 @@ function renderProgressStats(cambios) {
     </div>
   `;
 
-  // Tarjeta Comunidades
+  // Tarjeta Comunidades (Gráfico de Pastel)
   if(topComms.length > 0) {
-    const maxComm = topComms[0][1];
-    let commsHtml = '';
-    topComms.forEach(([name, count]) => {
-      const pct = (count / maxComm) * 100;
-      commsHtml += `
-        <div class="stat-bar-row">
-          <div class="stat-bar-label" title="${name}">${name}</div>
-          <div class="stat-bar-track">
-            <div class="stat-bar-fill" style="width:${pct}%; background:#10b981;"></div>
-          </div>
-          <div class="stat-bar-value">${count}</div>
+    const totalCommMentions = topComms.reduce((acc, curr) => acc + curr[1], 0);
+    const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#f97316'];
+    
+    let gradientParts = [];
+    let legendHtml = '';
+    let currentAngle = 0;
+
+    topComms.forEach(([name, count], index) => {
+      const percentage = (count / totalCommMentions) * 100;
+      const color = colors[index % colors.length];
+      
+      const startAngle = currentAngle;
+      currentAngle += percentage;
+      const endAngle = currentAngle;
+      
+      gradientParts.push(`${color} ${startAngle}% ${endAngle}%`);
+      
+      legendHtml += `
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px; font-size:0.85rem;">
+          <div style="width:12px; height:12px; border-radius:50%; background-color:${color}; flex-shrink:0;"></div>
+          <div style="flex-grow:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#e2e8f0;" title="${name}">${name}</div>
+          <div style="font-weight:bold; color:#94a3b8; width:35px; text-align:right;">${Math.round(percentage)}%</div>
         </div>
       `;
     });
+    
+    const gradient = gradientParts.join(', ');
+    
     html += `
       <div class="stat-card">
-        <h4 class="stat-card-title">Ubicaciones más frecuentes</h4>
-        <div class="stat-bar-container">${commsHtml}</div>
+        <h4 class="stat-card-title">Distribución por Comunidades</h4>
+        <div style="display:flex; flex-direction:column; align-items:center; gap:20px; padding:10px 0;">
+          <div style="width:140px; height:140px; border-radius:50%; background: conic-gradient(${gradient}); box-shadow: 0 4px 10px rgba(0,0,0,0.3); position:relative; overflow:hidden;">
+            <!-- Opcional: Para hacer un gráfico de dona descomentar la siguiente línea -->
+            <!-- <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); width:70px; height:70px; background:#1e293b; border-radius:50%;"></div> -->
+          </div>
+          <div style="width:100%;">
+            ${legendHtml}
+          </div>
+        </div>
       </div>
     `;
   }
