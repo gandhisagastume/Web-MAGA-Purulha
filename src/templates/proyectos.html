@@ -23,21 +23,21 @@
         <h2 class="section-title">Últimos Proyectos</h2>
         
         <div class="carousel-container" id="featuredCarouselContainer">
-          <button class="carousel-btn prev" id="carouselPrevBtn" aria-label="Anterior">
+          <button class="carousel-btn prev" id="featuredPrevBtn" aria-label="Anterior">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
           </button>
           
           <div class="carousel-viewport" id="featuredCarouselViewport">
-            <div class="projects-grid featured carousel-track" id="featuredCarouselTrack">
+            <div class="projects-grid featured carousel-track" id="featuredTrack">
               <!-- Los últimos proyectos se cargarán dinámicamente desde la base de datos -->
             </div>
           </div>
           
-          <button class="carousel-btn next" id="carouselNextBtn" aria-label="Siguiente">
+          <button class="carousel-btn next" id="featuredNextBtn" aria-label="Siguiente">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
           </button>
           
-          <div class="carousel-dots" id="carouselDots"></div>
+          <div class="carousel-dots" id="featuredDots"></div>
         </div>
       </section>
 
@@ -47,8 +47,19 @@
           <!-- Capacitaciones -->
           <div class="category-section" id="capacitaciones">
             <h3 class="category-title">Capacitaciones</h3>
-            <div class="projects-grid">
-              <!-- Los proyectos se cargarán dinámicamente desde la base de datos -->
+            <div class="carousel-container" id="capacitacionesCarouselContainer">
+              <button class="carousel-btn prev" id="capacitacionesPrevBtn" aria-label="Anterior">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+              </button>
+              <div class="carousel-viewport">
+                <div class="projects-grid carousel-track" id="capacitacionesTrack">
+                  <!-- Los proyectos se cargarán dinámicamente desde la base de datos -->
+                </div>
+              </div>
+              <button class="carousel-btn next" id="capacitacionesNextBtn" aria-label="Siguiente">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+              </button>
+              <div class="carousel-dots" id="capacitacionesDots"></div>
             </div>
             <div class="category-actions">
               <button class="btn-ver-todos" data-category="capacitaciones">Ver todos</button>
@@ -58,8 +69,19 @@
           <!-- Entregas -->
           <div class="category-section" id="entregas">
             <h3 class="category-title">Entregas</h3>
-            <div class="projects-grid">
-              <!-- Los proyectos se cargarán dinámicamente desde la base de datos -->
+            <div class="carousel-container" id="entregasCarouselContainer">
+              <button class="carousel-btn prev" id="entregasPrevBtn" aria-label="Anterior">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+              </button>
+              <div class="carousel-viewport">
+                <div class="projects-grid carousel-track" id="entregasTrack">
+                  <!-- Los proyectos se cargarán dinámicamente desde la base de datos -->
+                </div>
+              </div>
+              <button class="carousel-btn next" id="entregasNextBtn" aria-label="Siguiente">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+              </button>
+              <div class="carousel-dots" id="entregasDots"></div>
             </div>
             <div class="category-actions">
               <button class="btn-ver-todos" data-category="entregas">Ver todos</button>
@@ -69,8 +91,19 @@
           <!-- Proyectos de Ayuda -->
           <div class="category-section" id="proyectos-ayuda">
             <h3 class="category-title">Proyectos de Ayuda</h3>
-            <div class="projects-grid">
-              <!-- Los proyectos se cargarán dinámicamente desde la base de datos -->
+            <div class="carousel-container" id="ayudaCarouselContainer">
+              <button class="carousel-btn prev" id="ayudaPrevBtn" aria-label="Anterior">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+              </button>
+              <div class="carousel-viewport">
+                <div class="projects-grid carousel-track" id="ayudaTrack">
+                  <!-- Los proyectos se cargarán dinámicamente desde la base de datos -->
+                </div>
+              </div>
+              <button class="carousel-btn next" id="ayudaNextBtn" aria-label="Siguiente">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+              </button>
+              <div class="carousel-dots" id="ayudaDots"></div>
             </div>
             <div class="category-actions">
               <button class="btn-ver-todos" data-category="proyectos-ayuda">Ver todos</button>
@@ -1177,5 +1210,5 @@
 {% endblock %}
 
 {% block extra_js %}
-  <script src="{% static 'js/proyectos.js' %}?v=76"></script>
+  <script src="{% static 'js/proyectos.js' %}?v=77"></script>
 {% endblock %}

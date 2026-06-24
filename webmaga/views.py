@@ -6988,7 +6988,7 @@ def api_ultimos_proyectos(request):
             Prefetch('evidencias', queryset=Evidencia.objects.filter(es_imagen=True).order_by('creado_en'))
         ).annotate(
             personal_count=Count('personal', distinct=True)
-        ).order_by('-actualizado_en')[:3]
+        ).order_by('-actualizado_en')[:12]
         
         proyectos_data = []
         for evento in eventos:

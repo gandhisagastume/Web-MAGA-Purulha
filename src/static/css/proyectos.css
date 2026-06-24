@@ -374,10 +374,10 @@ textarea.project-description-textarea::placeholder {
   transform: translateZ(0);
 }
 
-.projects-grid.featured.carousel-track {
-  display: flex;
+.projects-grid.carousel-track {
+  display: flex !important;
   flex-direction: row;
-  grid-template-columns: none;
+  grid-template-columns: none !important;
   gap: 24px;
   margin-bottom: 0;
   width: max-content;
@@ -385,7 +385,7 @@ textarea.project-description-textarea::placeholder {
   transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
-.projects-grid.featured.carousel-track .project-card {
+.projects-grid.carousel-track .project-card {
   width: calc(100vw - 40px);
   max-width: 400px; /* Tamaño de la tarjeta en desktop */
   flex: 0 0 auto;
