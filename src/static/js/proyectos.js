@@ -5295,33 +5295,19 @@ async function renderCambios(cambios) {
 
       }
 
-      // Event listener para mostrar detalles al hacer clic en el cambio (solo para usuarios autenticados)
-
-      changeItem.addEventListener('click', function(e) {
-
-        // Solo mostrar detalles si no se hizo clic en un botón
-
-        if (!e.target.closest('.btn-edit-item') && !e.target.closest('.btn-delete-item')) {
-
-          showChangeDetailsModal(cambio);
-
-        }
-
-      });
-
-    } else {
-
-      // Si no tiene permisos, NO agregar event listener de clic y remover clase clickable
-
-      changeItem.classList.remove('clickable');
-
-      changeItem.style.cursor = 'default';
-
-      changeItem.style.opacity = '0.9';
-
-      changeItem.title = 'Debes iniciar sesión como admin o personal para ver detalles del cambio';
-
     }
+
+    // Event listener para mostrar detalles al hacer clic en el cambio (para TODOS los usuarios)
+    changeItem.addEventListener('click', function(e) {
+
+      // Solo mostrar detalles si no se hizo clic en un botón
+      if (!e.target.closest('.btn-edit-item') && !e.target.closest('.btn-delete-item')) {
+
+        showChangeDetailsModal(cambio);
+
+      }
+
+    });
 
   }
 
@@ -12648,15 +12634,7 @@ function showChangeDetailsModal(cambio) {
 
   if (!cambio) return;
 
-  // Verificar permisos antes de mostrar el modal
-
   const puedeGestionar = puedeGestionarGaleria();
-
-  if (!puedeGestionar) {
-
-    return; // Bloquear acceso al modal para usuarios no autenticados
-
-  }
 
   // Llenar información del cambio
 
@@ -12896,9 +12874,9 @@ async function actualizarDescripcionEvidencia(evidenciaId, descripcion) {
 
 }
 
-// Función para cargar evidencias
+// ======= CARGA Y VISUALIZACION DE EVIDENCIAS =======
 
-function loadEvidences(evidences, puedeGestionar = false, permiteEliminar = false) {
+function loadEvidences(evidences, puedeGestionar = false, permiteEliminar = false, ctxBase64 = '') {
 
   const grid = document.getElementById('evidencesGrid');
 
@@ -12906,9 +12884,11 @@ function loadEvidences(evidences, puedeGestionar = false, permiteEliminar = fals
 
   // Aplicar estilos mejorados al grid para evitar que se vea amontonado
 
-  grid.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; padding: 20px 0;';
+  grid.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px; padding: 20px 0;';
 
   grid.innerHTML = '';
+
+  window.changeDetailsPhotos = [];
 
   if (!evidences || evidences.length === 0) {
 
@@ -12942,13 +12922,13 @@ function loadEvidences(evidences, puedeGestionar = false, permiteEliminar = fals
 
     evidenceItem.className = 'evidence-item';
 
-    evidenceItem.style.cssText = 'background: rgba(255,255,255,0.05); border-radius: 8px; padding: 12px; border: 1px solid rgba(255,255,255,0.1); transition: transform 0.2s, box-shadow 0.2s;';
+    evidenceItem.style.cssText = 'background: rgba(255,255,255,0.05); border-radius: 8px; padding: 12px; border: 1px solid rgba(255,255,255,0.1); transition: transform 0.2s, box-shadow 0.2s; display: flex; flex-direction: column; align-items: center; text-align: center;';
 
     evidenceItem.onmouseover = function() { 
 
-      this.style.transform = 'translateY(-2px)'; 
+      this.style.transform = 'translateY(-4px)'; 
 
-      this.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)'; 
+      this.style.boxShadow = '0 6px 16px rgba(0,0,0,0.4)'; 
 
     };
 
@@ -12966,14 +12946,14 @@ function loadEvidences(evidences, puedeGestionar = false, permiteEliminar = fals
 
     // Mostrar enlace clickeable para todos los usuarios
 
-    const nombreArchivoHTML = `<a href="${evidence.url}" target="_blank" style="color: #007bff; text-decoration: none; font-weight: 500; font-size: 0.9rem; flex: 1; min-width: 0; word-break: break-word;" title="${nombreArchivo}" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${nombreArchivo}</a>`;
+    const nombreArchivoHTML = `<a href="${evidence.url}" target="_blank" style="color: #0ea5e9; text-decoration: none; font-weight: 500; font-size: 0.8rem; flex: 1; min-width: 0; word-break: break-word; margin-top: 8px;" title="${nombreArchivo}" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${nombreArchivo}</a>`;
 
     // Botón de eliminar solo si tiene permisos Y se permite eliminar (modo edición)
     // En el modal de detalles (solo lectura) NO se muestra el botón de eliminar
 
     const botonEliminarHTML = (puedeGestionar && permiteEliminar)
 
-      ? `<button class="evidence-remove" data-evidence-id="${evidence.id}" style="background: rgba(220, 53, 69, 0.9); color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; transition: background 0.2s; flex-shrink: 0;" title="Eliminar evidencia" onmouseover="this.style.background='#dc3545'" onmouseout="this.style.background='rgba(220, 53, 69, 0.9)'">
+      ? `<button class="evidence-remove" data-evidence-id="${evidence.id}" style="background: rgba(220, 53, 69, 0.9); color: white; border: none; padding: 4px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; transition: background 0.2s; position: absolute; top: 4px; right: 4px;" title="Eliminar evidencia" onmouseover="this.style.background='#dc3545'" onmouseout="this.style.background='rgba(220, 53, 69, 0.9)'">
 
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 
@@ -12987,61 +12967,56 @@ function loadEvidences(evidences, puedeGestionar = false, permiteEliminar = fals
 
       : '';
 
+    let mediaHtml = '';
+    if(isImage) {
+      window.changeDetailsPhotos.push({
+        url: evidence.url,
+        desc: nombreArchivo,
+        ctxBase64: ctxBase64
+      });
+      const photoIndex = window.changeDetailsPhotos.length - 1;
+      mediaHtml = `<img src="${evidence.url}" alt="${nombreArchivo}" class="evidence-image" loading="lazy" style="width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); cursor: pointer;" onclick="openProgressLightboxByIndex(${photoIndex}, 'changeDetails')">`;
+    } else {
+      mediaHtml = `<div class="evidence-file-icon" style="font-size: 2rem; width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; background: rgba(14, 165, 233, 0.1); color: #0ea5e9; border-radius: 6px; border: 1px solid rgba(14, 165, 233, 0.2);">📄</div>`;
+    }
+
+    evidenceItem.style.position = 'relative';
+
     evidenceItem.innerHTML = `
 
-      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
+      ${mediaHtml}
 
-        ${isImage ? 
+      ${nombreArchivoHTML}
 
-          `<img src="${evidence.url}" alt="${nombreArchivo}" class="evidence-image" loading="lazy" style="width: 60px; height: 60px; object-fit: cover; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); flex-shrink: 0;">` :
-
-          `<div class="evidence-file-icon" style="font-size: 1.8rem; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; background: rgba(0, 123, 255, 0.2); border-radius: 6px; flex-shrink: 0;">📄</div>`
-
-        }
-
-        <div style="flex: 1; min-width: 0;">
-
-          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-
-            ${nombreArchivoHTML}
-
-            ${botonEliminarHTML}
-
-          </div>
-
-          <div style="color: #6c757d; font-size: 0.8rem; margin-bottom: 8px;">${evidence.tipo || 'Archivo'}</div>
-
-        </div>
-
-      </div>
-
-      <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
-
-        <label style="color: var(--text-secondary); font-size: 0.85rem; display: block; margin-bottom: 6px;">Descripción:</label>
-
-        <p style="color: #fff; font-size: 0.9rem; margin: 0; padding: 8px; background: rgba(255,255,255,0.05); border-radius: 4px; white-space: pre-wrap; word-wrap: break-word; min-height: 40px;">${evidence.descripcion || '<span style="color: #6c757d; font-style: italic;">Sin descripción</span>'}</p>
-
-      </div>
+      ${botonEliminarHTML}
 
     `;
 
+    // Add event listener for the delete button if it exists
+
+    if (puedeGestionar && permiteEliminar) {
+
+      const btnDelete = evidenceItem.querySelector('.evidence-remove');
+
+      if (btnDelete) {
+
+        btnDelete.addEventListener('click', function(e) {
+
+          e.preventDefault();
+
+          e.stopPropagation();
+
+          const id = this.getAttribute('data-evidence-id');
+
+          eliminarEvidenciaCambio(id);
+
+        });
+
+      }
+
+    }
+
     grid.appendChild(evidenceItem);
-
-  });
-
-  // Agregar event listeners para eliminar evidencias
-
-  grid.querySelectorAll('.evidence-remove').forEach(btn => {
-
-    btn.addEventListener('click', async function(e) {
-
-      e.stopPropagation();
-
-      const evidenciaId = this.getAttribute('data-evidence-id');
-
-      await eliminarEvidenciaCambio(evidenciaId);
-
-    });
 
   });
 
@@ -13937,6 +13912,8 @@ function renderProgressTimeline(cambios, sortOrder = 'asc') {
     return sortOrder === 'asc' ? fechaA - fechaB : fechaB - fechaA;
   });
 
+  window.timelineProgressPhotos = [];
+
   let html = '';
   let currentMonthYear = '';
 
@@ -14013,9 +13990,16 @@ function renderProgressTimeline(cambios, sortOrder = 'asc') {
         photosHtml = '<div class="timeline-photos">';
         photos.slice(0, 4).forEach((p, i) => {
           const imgDesc = (p.descripcion || p.nombre || '').replace(/'/g, "\\'");
+          window.timelineProgressPhotos.push({
+            url: p.url || '',
+            desc: imgDesc,
+            ctxBase64: ctxBase64
+          });
+          const photoIndex = window.timelineProgressPhotos.length - 1;
+
           if(i === 3 && photos.length > 4) {
             photosHtml += `
-              <div style="position:relative; cursor:pointer;" onclick="openProgressLightbox('${p.url || ''}', '${imgDesc}', '${ctxBase64}')">
+              <div style="position:relative; cursor:pointer;" onclick="openProgressLightboxByIndex(${photoIndex}, 'timeline')">
                 <img src="${p.url || ''}" class="timeline-photo" alt="Evidencia" style="opacity:0.5;">
                 <div style="position:absolute; top:0;left:0;right:0;bottom:0; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:1.2rem; pointer-events:none;">+${photos.length - 4}</div>
               </div>
@@ -14187,19 +14171,44 @@ function renderProgressStats(cambios) {
   container.innerHTML = html;
 }
 
-// Lightbox functions
-function openProgressLightbox(url, desc, ctxBase64) {
+// Lightbox functions with Navigation
+let currentProgressLightboxContext = 'timeline';
+let currentProgressLightboxIndex = 0;
+let progressLightboxImages = [];
+
+function openProgressLightboxByIndex(index, context) {
+  currentProgressLightboxContext = context;
+  currentProgressLightboxIndex = index;
+  
+  if(context === 'timeline') {
+    progressLightboxImages = window.timelineProgressPhotos || [];
+  } else if (context === 'changeDetails') {
+    progressLightboxImages = window.changeDetailsPhotos || [];
+  }
+
+  if(!progressLightboxImages[index]) return;
+
+  renderProgressLightbox();
+}
+
+function renderProgressLightbox() {
   const lb = document.getElementById('progressLightbox');
   if(!lb) return;
   
+  const imgData = progressLightboxImages[currentProgressLightboxIndex];
+  if(!imgData) return;
+
   let ctx = {};
   try {
-    if(ctxBase64) {
-      ctx = JSON.parse(decodeURIComponent(escape(atob(ctxBase64))));
+    if(imgData.ctxBase64) {
+      ctx = JSON.parse(decodeURIComponent(escape(atob(imgData.ctxBase64))));
     }
   } catch(e) {
     console.error("Error parseando contexto del lightbox:", e);
   }
+
+  const hasPrev = currentProgressLightboxIndex > 0;
+  const hasNext = currentProgressLightboxIndex < progressLightboxImages.length - 1;
 
   // Inject a completely new innerHTML for modern look
   lb.innerHTML = `
@@ -14209,9 +14218,25 @@ function openProgressLightbox(url, desc, ctxBase64) {
         <line x1="6" y1="6" x2="18" y2="18"></line>
       </svg>
     </button>
+    
+    ${hasPrev ? `
+    <button class="progress-lightbox-nav prev" onclick="navigateProgressLightbox(-1)" style="position: absolute; left: 20px; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.5); color: white; border: 1px solid rgba(255,255,255,0.2); width: 44px; height: 44px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10002; transition: all 0.2s ease;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+    </button>
+    ` : ''}
+
+    ${hasNext ? `
+    <button class="progress-lightbox-nav next" onclick="navigateProgressLightbox(1)" style="position: absolute; right: 410px; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.5); color: white; border: 1px solid rgba(255,255,255,0.2); width: 44px; height: 44px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10002; transition: all 0.2s ease;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+    </button>
+    ` : ''}
+
     <div class="progress-lightbox-content">
-      <div class="progress-lightbox-img-container">
-        <img src="${url}" class="progress-lightbox-img" alt="Vista completa">
+      <div class="progress-lightbox-img-container" style="position: relative;">
+        <img src="${imgData.url}" class="progress-lightbox-img" alt="Vista completa">
+        <div style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.6); color: white; padding: 4px 12px; border-radius: 12px; font-size: 0.8rem; font-weight: bold; letter-spacing: 1px;">
+          ${currentProgressLightboxIndex + 1} / ${progressLightboxImages.length}
+        </div>
       </div>
       <div class="progress-lightbox-sidebar">
         <div class="lightbox-sidebar-header">Detalles del Avance</div>
@@ -14234,16 +14259,43 @@ function openProgressLightbox(url, desc, ctxBase64) {
           <div class="lightbox-sidebar-value">${ctx.responsables}</div>
         </div>` : ''}
 
-        ${desc && desc !== ctx.changeDesc ? `
+        ${imgData.desc && imgData.desc !== ctx.changeDesc ? `
         <div class="lightbox-sidebar-section">
           <div class="lightbox-sidebar-label">Nota de la imagen</div>
-          <div class="lightbox-sidebar-value" style="font-style: italic; color: #94a3b8;">${desc}</div>
+          <div class="lightbox-sidebar-value" style="font-style: italic; color: #94a3b8;">${imgData.desc}</div>
         </div>` : ''}
       </div>
     </div>
   `;
 
   lb.classList.add('active');
+  
+  // Attach keyboard event listener if it's the first time
+  if(!window.progressLightboxKeyHandlerAdded) {
+    document.addEventListener('keydown', handleProgressLightboxKeys);
+    window.progressLightboxKeyHandlerAdded = true;
+  }
+}
+
+window.navigateProgressLightbox = function(direction) {
+  const newIndex = currentProgressLightboxIndex + direction;
+  if(newIndex >= 0 && newIndex < progressLightboxImages.length) {
+    currentProgressLightboxIndex = newIndex;
+    renderProgressLightbox();
+  }
+};
+
+function handleProgressLightboxKeys(e) {
+  const lb = document.getElementById('progressLightbox');
+  if(lb && lb.classList.contains('active')) {
+    if(e.key === 'ArrowLeft') {
+      window.navigateProgressLightbox(-1);
+    } else if (e.key === 'ArrowRight') {
+      window.navigateProgressLightbox(1);
+    } else if (e.key === 'Escape') {
+      window.closeProgressLightbox();
+    }
+  }
 }
 
 window.closeProgressLightbox = function() {
@@ -14253,5 +14305,9 @@ window.closeProgressLightbox = function() {
     setTimeout(() => {
       lb.innerHTML = '';
     }, 300);
+  }
+  if(window.progressLightboxKeyHandlerAdded) {
+    document.removeEventListener('keydown', handleProgressLightboxKeys);
+    window.progressLightboxKeyHandlerAdded = false;
   }
 }
