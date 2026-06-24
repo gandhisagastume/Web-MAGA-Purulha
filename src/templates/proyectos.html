@@ -21,8 +21,23 @@
       <!-- Sección de Últimos Proyectos -->
       <section class="latest-projects">
         <h2 class="section-title">Últimos Proyectos</h2>
-        <div class="projects-grid featured">
-          <!-- Los últimos proyectos se cargarán dinámicamente desde la base de datos -->
+        
+        <div class="carousel-container" id="featuredCarouselContainer">
+          <button class="carousel-btn prev" id="carouselPrevBtn" aria-label="Anterior">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+          </button>
+          
+          <div class="carousel-viewport" id="featuredCarouselViewport">
+            <div class="projects-grid featured carousel-track" id="featuredCarouselTrack">
+              <!-- Los últimos proyectos se cargarán dinámicamente desde la base de datos -->
+            </div>
+          </div>
+          
+          <button class="carousel-btn next" id="carouselNextBtn" aria-label="Siguiente">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </button>
+          
+          <div class="carousel-dots" id="carouselDots"></div>
         </div>
       </section>
 
@@ -1162,5 +1177,5 @@
 {% endblock %}
 
 {% block extra_js %}
-  <script src="{% static 'js/proyectos.js' %}?v=73"></script>
+  <script src="{% static 'js/proyectos.js' %}?v=74"></script>
 {% endblock %}

@@ -967,6 +967,7 @@ function renderizarCategoria(categoriaId, proyectos) {
   // Mostrar solo los primeros 3 proyectos
 
   const proyectosMostrar = proyectos.slice(0, 3);
+  const fragment = document.createDocumentFragment();
 
   proyectosMostrar.forEach(proyecto => {
     // Debug: Verificar datos del proyecto antes de crear la tarjeta
@@ -980,10 +981,10 @@ function renderizarCategoria(categoriaId, proyectos) {
     }
     
     const projectCard = crearTarjetaProyecto(proyecto);
-
-    gridContainer.appendChild(projectCard);
-
+    fragment.appendChild(projectCard);
   });
+
+  gridContainer.appendChild(fragment);
 
 }
 
@@ -1126,6 +1127,8 @@ function renderFeaturedProjectsGrid() {
 
   const projectsToRender = featuredProjectsData.slice(0, FEATURED_PROJECTS_LIMIT);
 
+  const fragment = document.createDocumentFragment();
+
   projectsToRender.forEach((proyecto, index) => {
     try {
       const card = crearTarjetaProyectoDestacado(proyecto);
@@ -1153,12 +1156,135 @@ function renderFeaturedProjectsGrid() {
         }
       }
 
-      featuredGrid.appendChild(card);
+      fragment.appendChild(card);
     } catch (error) {
     }
   });
 
+  featuredGrid.appendChild(fragment);
+
+  // Inicializar carrusel
+  initFeaturedCarousel();
+
 }
+
+// === Lógica del Carrusel ===
+let currentCarouselIndex = 0;
+let carouselAutoplayInterval = null;
+
+function initFeaturedCarousel() {
+  const track = document.getElementById('featuredCarouselTrack');
+  const dotsContainer = document.getElementById('carouselDots');
+  const prevBtn = document.getElementById('carouselPrevBtn');
+  const nextBtn = document.getElementById('carouselNextBtn');
+  
+  if (!track || !featuredProjectsData || featuredProjectsData.length === 0) return;
+
+  const totalItems = track.children.length;
+  dotsContainer.innerHTML = '';
+  currentCarouselIndex = 0;
+
+  // Solo mostrar controles si hay más de 1 item
+  if (totalItems <= 1) {
+    if(prevBtn) prevBtn.style.display = 'none';
+    if(nextBtn) nextBtn.style.display = 'none';
+    return;
+  }
+
+  if(prevBtn) prevBtn.style.display = 'flex';
+  if(nextBtn) nextBtn.style.display = 'flex';
+
+  // Crear dots
+  for (let i = 0; i < totalItems; i++) {
+    const dot = document.createElement('div');
+    dot.className = i === 0 ? 'carousel-dot active' : 'carousel-dot';
+    dot.onclick = () => goToCarouselSlide(i);
+    dotsContainer.appendChild(dot);
+  }
+
+  // Bind events
+  if (prevBtn) {
+    prevBtn.onclick = () => {
+      stopCarouselAutoplay();
+      goToCarouselSlide(currentCarouselIndex - 1);
+      startCarouselAutoplay();
+    };
+  }
+  if (nextBtn) {
+    nextBtn.onclick = () => {
+      stopCarouselAutoplay();
+      goToCarouselSlide(currentCarouselIndex + 1);
+      startCarouselAutoplay();
+    };
+  }
+
+  // Hover handlers for autoplay
+  const container = document.getElementById('featuredCarouselContainer');
+  if (container) {
+    container.onmouseenter = stopCarouselAutoplay;
+    container.onmouseleave = startCarouselAutoplay;
+  }
+
+  updateCarouselPosition();
+  startCarouselAutoplay();
+}
+
+function goToCarouselSlide(index) {
+  const track = document.getElementById('featuredCarouselTrack');
+  if (!track) return;
+  const totalItems = track.children.length;
+  
+  if (index < 0) {
+    currentCarouselIndex = totalItems - 1;
+  } else if (index >= totalItems) {
+    currentCarouselIndex = 0;
+  } else {
+    currentCarouselIndex = index;
+  }
+  
+  updateCarouselPosition();
+}
+
+function updateCarouselPosition() {
+  const track = document.getElementById('featuredCarouselTrack');
+  const dotsContainer = document.getElementById('carouselDots');
+  if (!track || !track.children[0]) return;
+
+  // Calculamos el ancho de la tarjeta + gap
+  const cardWidth = track.children[0].getBoundingClientRect().width;
+  const gap = 24; // Debe coincidir con el CSS
+  const offset = currentCarouselIndex * (cardWidth + gap);
+  
+  // Usamos translate3d para forzar aceleración por hardware
+  track.style.transform = \`translate3d(-\${offset}px, 0, 0)\`;
+
+  // Actualizar dots
+  if (dotsContainer) {
+    const dots = dotsContainer.children;
+    for (let i = 0; i < dots.length; i++) {
+      if (i === currentCarouselIndex) {
+        dots[i].classList.add('active');
+      } else {
+        dots[i].classList.remove('active');
+      }
+    }
+  }
+}
+
+function startCarouselAutoplay() {
+  stopCarouselAutoplay();
+  carouselAutoplayInterval = setInterval(() => {
+    goToCarouselSlide(currentCarouselIndex + 1);
+  }, 5000);
+}
+
+function stopCarouselAutoplay() {
+  if (carouselAutoplayInterval) {
+    clearInterval(carouselAutoplayInterval);
+    carouselAutoplayInterval = null;
+  }
+}
+
 
 function normalizeProjectForFeatured(proyecto) {
   if (!proyecto) {
@@ -3177,6 +3303,9 @@ function handleListItemClick(e) {
 }
 
 // Variables globales para almacenar datos del proyecto actual
+
+const ITEMS_PER_PAGE = 50;
+const FEATURED_PROJECTS_LIMIT = 12;
 
 let currentProjectData = null;
 
