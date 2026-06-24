@@ -14034,7 +14034,7 @@ function renderProgressTimeline(cambios, sortOrder = 'asc') {
               </div>
             `;
           } else {
-            photosHtml += `<img src="${p.url || ''}" class="timeline-photo" alt="Evidencia" onclick="openProgressLightbox('${p.url || ''}', '${imgDesc}', '${ctxBase64}')">`;
+            photosHtml += `<img src="${p.url || ''}" class="timeline-photo" alt="Evidencia" onclick="openProgressLightboxByIndex(${photoIndex}, 'timeline')">`;
           }
         });
         photosHtml += '</div>';
