@@ -1256,7 +1256,7 @@ function updateCarouselPosition() {
   const offset = currentCarouselIndex * (cardWidth + gap);
   
   // Usamos translate3d para forzar aceleración por hardware
-  track.style.transform = \`translate3d(-\${offset}px, 0, 0)\`;
+  track.style.transform = `translate3d(-${offset}px, 0, 0)`;
 
   // Actualizar dots
   if (dotsContainer) {
