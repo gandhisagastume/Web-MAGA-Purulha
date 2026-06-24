@@ -3326,7 +3326,6 @@ let currentProjectGalleryImages = [];
 let currentProjectGalleryPage = 0;
 let currentProjectGalleryCanManage = false;
 const PROJECT_GALLERY_PAGE_SIZE = 4;
-const FEATURED_PROJECTS_LIMIT = 3;
 let featuredProjectsData = [];
 let shouldRefreshLatestProjects = false;
 
