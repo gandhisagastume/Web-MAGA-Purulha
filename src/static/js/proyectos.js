@@ -1986,12 +1986,10 @@ async function mostrarDetalleProyecto(proyecto) {
         const descripcionVisible = archivo.descripcion ? escapeHtml(archivo.descripcion) : '';
         const descripcionEncoded = archivo.descripcion ? encodeURIComponent(archivo.descripcion) : '';
 
-        // Si puede gestionar, mostrar enlace clickeable, si no, solo texto
+        // Mostrar enlace clickeable para todos los usuarios
         // Escapar HTML del nombre del archivo para seguridad
         const nombreArchivoEscapado = escapeHtml(archivo.nombre);
-        const nombreArchivo = puedeGestionar 
-          ? `<a href="${archivoUrl || archivo.url || '#'}" target="_blank" rel="noopener noreferrer" title="${nombreArchivoEscapado}">${nombreArchivoEscapado}${offlineBadge}</a>`
-          : `<span style="color: #6c757d; cursor: not-allowed;" title="Debes iniciar sesión como admin o personal para ver/descargar archivos">${nombreArchivoEscapado}</span>`;
+        const nombreArchivo = `<a href="${archivoUrl || archivo.url || '#'}" target="_blank" rel="noopener noreferrer" title="${nombreArchivoEscapado}" style="color: #007bff; text-decoration: none; font-weight: 500;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${nombreArchivoEscapado}${offlineBadge}</a>`;
 
         return `
 
@@ -2023,7 +2021,6 @@ async function mostrarDetalleProyecto(proyecto) {
 
             </div>
 
-          ${puedeGestionar ? `
           <div class="file-actions">
             <a class="file-download-btn" href="${archivoUrl || archivo.url || '#'}" target="_blank" rel="noopener noreferrer">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -2052,7 +2049,6 @@ async function mostrarDetalleProyecto(proyecto) {
                 </button>
               ` : ''}
             </div>
-          ` : ''}
 
           </div>
 
@@ -12117,21 +12113,19 @@ function loadProjectFiles(files) {
     const puedeEditar = puedeGestionarGlobal && !file.es_evidencia;
     const puedeEliminar = puedeGestionarGlobal && !file.es_evidencia;
 
-    if (puedeGestionarGlobal) {
-      const downloadBtn = document.createElement('a');
-      downloadBtn.className = 'file-download-btn';
-      downloadBtn.href = file.url;
-      downloadBtn.download = file.originalName;
-      downloadBtn.innerHTML = `
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-          <polyline points="7,10 12,15 17,10"></polyline>
-          <line x1="12" y1="15" x2="12" y2="3"></line>
-        </svg>
-        Descargar
-      `;
-      fileActions.appendChild(downloadBtn);
-    }
+    const downloadBtn = document.createElement('a');
+    downloadBtn.className = 'file-download-btn';
+    downloadBtn.href = file.url;
+    downloadBtn.download = file.originalName;
+    downloadBtn.innerHTML = `
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+        <polyline points="7,10 12,15 17,10"></polyline>
+        <line x1="12" y1="15" x2="12" y2="3"></line>
+      </svg>
+      Descargar
+    `;
+    fileActions.appendChild(downloadBtn);
 
     if (puedeEditar) {
       const editBtn = document.createElement('button');
@@ -12970,13 +12964,9 @@ function loadEvidences(evidences, puedeGestionar = false, permiteEliminar = fals
 
     const nombreArchivo = evidence.nombre || evidence.archivo_nombre || 'Sin nombre';
 
-    // Si puede gestionar, mostrar enlace clickeable, si no, solo texto
+    // Mostrar enlace clickeable para todos los usuarios
 
-    const nombreArchivoHTML = puedeGestionar 
-
-      ? `<a href="${evidence.url}" target="_blank" style="color: #007bff; text-decoration: none; font-weight: 500; font-size: 0.9rem; flex: 1; min-width: 0; word-break: break-word;" title="${nombreArchivo}" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${nombreArchivo}</a>`
-
-      : `<span style="color: #6c757d; font-weight: 500; font-size: 0.9rem; flex: 1; min-width: 0; word-break: break-word; cursor: not-allowed;" title="Debes iniciar sesión como admin o personal para ver/descargar evidencias">${nombreArchivo}</span>`;
+    const nombreArchivoHTML = `<a href="${evidence.url}" target="_blank" style="color: #007bff; text-decoration: none; font-weight: 500; font-size: 0.9rem; flex: 1; min-width: 0; word-break: break-word;" title="${nombreArchivo}" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${nombreArchivo}</a>`;
 
     // Botón de eliminar solo si tiene permisos Y se permite eliminar (modo edición)
     // En el modal de detalles (solo lectura) NO se muestra el botón de eliminar
@@ -13971,29 +13961,6 @@ function renderProgressTimeline(cambios, sortOrder = 'asc') {
     // Fecha formateada corta
     const dateStr = `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear()}`;
     
-    // Fotos
-    let photosHtml = '';
-    const evidenciasArray = Array.isArray(cambio.evidencias) ? cambio.evidencias : [];
-    if(evidenciasArray.length > 0) {
-      const photos = evidenciasArray.filter(e => e && e.es_imagen);
-      if(photos.length > 0) {
-        photosHtml = '<div class="timeline-photos">';
-        photos.slice(0, 4).forEach((p, i) => {
-          if(i === 3 && photos.length > 4) {
-            photosHtml += `
-              <div style="position:relative; cursor:pointer;" onclick="openProgressLightbox('${p.url || ''}', '${(p.descripcion || p.nombre || '').replace(/'/g, "\\'")}')">
-                <img src="${p.url || ''}" class="timeline-photo" alt="Evidencia" style="opacity:0.5;">
-                <div style="position:absolute; top:0;left:0;right:0;bottom:0; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:1.2rem; pointer-events:none;">+${photos.length - 4}</div>
-              </div>
-            `;
-          } else {
-            photosHtml += `<img src="${p.url || ''}" class="timeline-photo" alt="Evidencia" onclick="openProgressLightbox('${p.url || ''}', '${(p.descripcion || p.nombre || '').replace(/'/g, "\\'")}')">`;
-          }
-        });
-        photosHtml += '</div>';
-      }
-    }
-
     // Chips (Comunidades y Responsables)
     let metaHtml = '<div class="timeline-meta">';
     // ... handling strings in case it's a comma separated string
@@ -14003,12 +13970,62 @@ function renderProgressTimeline(cambios, sortOrder = 'asc') {
     } else if (Array.isArray(cambio.comunidades)) {
       comunidadesArray = cambio.comunidades;
     }
+    const comunidadesTexto = comunidadesArray.map(com => typeof com === 'string' ? com : (com.nombre || 'Comunidad')).join(', ');
     
     if(comunidadesArray.length > 0) {
       comunidadesArray.forEach(com => {
         const comName = typeof com === 'string' ? com : (com.nombre || 'Comunidad');
         metaHtml += `<span class="timeline-chip community"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg> ${comName}</span>`;
       });
+    }
+
+    let responsablesArray = [];
+    if (typeof cambio.responsables_display === 'string') {
+      responsablesArray = cambio.responsables_display.split(',').map(s => s.trim()).filter(s => s);
+    } else if (Array.isArray(cambio.colaboradores)) {
+      responsablesArray = cambio.colaboradores;
+    }
+    const responsablesTexto = responsablesArray.map(col => typeof col === 'string' ? col : (col.nombre || 'Personal')).join(', ');
+
+    if(responsablesArray.length > 0) {
+      responsablesArray.forEach(col => {
+        const colName = typeof col === 'string' ? col : (col.nombre || 'Personal');
+        metaHtml += `<span class="timeline-chip"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg> ${colName}</span>`;
+      });
+    }
+    metaHtml += '</div>';
+
+    const changeContext = {
+      changeDesc: cambio.descripcion || 'Sin descripción',
+      comunidades: comunidadesTexto,
+      responsables: responsablesTexto,
+      date: dateStr
+    };
+    // Codificar en base64 para evitar problemas con comillas simples/dobles
+    const ctxBase64 = btoa(unescape(encodeURIComponent(JSON.stringify(changeContext))));
+
+    // Fotos
+    let photosHtml = '';
+    const evidenciasArray = Array.isArray(cambio.evidencias) ? cambio.evidencias : [];
+    if(evidenciasArray.length > 0) {
+      const photos = evidenciasArray.filter(e => e && e.es_imagen);
+      if(photos.length > 0) {
+        photosHtml = '<div class="timeline-photos">';
+        photos.slice(0, 4).forEach((p, i) => {
+          const imgDesc = (p.descripcion || p.nombre || '').replace(/'/g, "\\'");
+          if(i === 3 && photos.length > 4) {
+            photosHtml += `
+              <div style="position:relative; cursor:pointer;" onclick="openProgressLightbox('${p.url || ''}', '${imgDesc}', '${ctxBase64}')">
+                <img src="${p.url || ''}" class="timeline-photo" alt="Evidencia" style="opacity:0.5;">
+                <div style="position:absolute; top:0;left:0;right:0;bottom:0; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:1.2rem; pointer-events:none;">+${photos.length - 4}</div>
+              </div>
+            `;
+          } else {
+            photosHtml += `<img src="${p.url || ''}" class="timeline-photo" alt="Evidencia" onclick="openProgressLightbox('${p.url || ''}', '${imgDesc}', '${ctxBase64}')">`;
+          }
+        });
+        photosHtml += '</div>';
+      }
     }
 
     let responsablesArray = [];
@@ -14183,25 +14200,70 @@ function renderProgressStats(cambios) {
 }
 
 // Lightbox functions
-function openProgressLightbox(url, desc) {
+function openProgressLightbox(url, desc, ctxBase64) {
   const lb = document.getElementById('progressLightbox');
-  const img = document.getElementById('progressLightboxImg');
-  const descEl = document.getElementById('progressLightboxDesc');
+  if(!lb) return;
   
-  if(!lb || !img) return;
-  
-  img.src = url;
-  descEl.textContent = desc || '';
+  let ctx = {};
+  try {
+    if(ctxBase64) {
+      ctx = JSON.parse(decodeURIComponent(escape(atob(ctxBase64))));
+    }
+  } catch(e) {
+    console.error("Error parseando contexto del lightbox:", e);
+  }
+
+  // Inject a completely new innerHTML for modern look
+  lb.innerHTML = `
+    <button class="progress-lightbox-close" onclick="closeProgressLightbox()">
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
+    <div class="progress-lightbox-content">
+      <div class="progress-lightbox-img-container">
+        <img src="${url}" class="progress-lightbox-img" alt="Vista completa">
+      </div>
+      <div class="progress-lightbox-sidebar">
+        <div class="lightbox-sidebar-header">Detalles del Avance</div>
+        <div class="lightbox-sidebar-date">${ctx.date || ''}</div>
+        
+        <div class="lightbox-sidebar-section">
+          <div class="lightbox-sidebar-label">Descripción del cambio</div>
+          <div class="lightbox-sidebar-value">${ctx.changeDesc || 'Sin descripción'}</div>
+        </div>
+        
+        ${ctx.comunidades ? `
+        <div class="lightbox-sidebar-section">
+          <div class="lightbox-sidebar-label">Comunidades</div>
+          <div class="lightbox-sidebar-value">${ctx.comunidades}</div>
+        </div>` : ''}
+        
+        ${ctx.responsables ? `
+        <div class="lightbox-sidebar-section">
+          <div class="lightbox-sidebar-label">Personal a cargo</div>
+          <div class="lightbox-sidebar-value">${ctx.responsables}</div>
+        </div>` : ''}
+
+        ${desc && desc !== ctx.changeDesc ? `
+        <div class="lightbox-sidebar-section">
+          <div class="lightbox-sidebar-label">Nota de la imagen</div>
+          <div class="lightbox-sidebar-value" style="font-style: italic; color: #94a3b8;">${desc}</div>
+        </div>` : ''}
+      </div>
+    </div>
+  `;
+
   lb.classList.add('active');
 }
 
-function closeProgressLightbox() {
+window.closeProgressLightbox = function() {
   const lb = document.getElementById('progressLightbox');
   if(lb) {
     lb.classList.remove('active');
     setTimeout(() => {
-      const img = document.getElementById('progressLightboxImg');
-      if(img) img.src = '';
-    }, 200);
+      lb.innerHTML = '';
+    }, 300);
   }
 }
