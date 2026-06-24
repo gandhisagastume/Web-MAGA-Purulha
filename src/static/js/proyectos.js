@@ -5300,8 +5300,8 @@ async function renderCambios(cambios) {
     // Event listener para mostrar detalles al hacer clic en el cambio (para TODOS los usuarios)
     changeItem.addEventListener('click', function(e) {
 
-      // Solo mostrar detalles si no se hizo clic en un botón
-      if (!e.target.closest('.btn-edit-item') && !e.target.closest('.btn-delete-item')) {
+      // Solo mostrar detalles si no se hizo clic en un botón o en una foto de la línea de tiempo
+      if (!e.target.closest('.btn-edit-item') && !e.target.closest('.btn-delete-item') && !e.target.closest('.timeline-photo')) {
 
         showChangeDetailsModal(cambio);
 
@@ -12688,10 +12688,38 @@ function showChangeDetailsModal(cambio) {
     }
   }
 
+  // Calculate context for lightbox
+  let comunidadesArray = [];
+  if (typeof cambio.comunidades === 'string') {
+    comunidadesArray = cambio.comunidades.split(',').map(s => s.trim()).filter(s => s);
+  } else if (Array.isArray(cambio.comunidades)) {
+    comunidadesArray = cambio.comunidades;
+  }
+  const comunidadesTexto2 = comunidadesArray.map(com => typeof com === 'string' ? com : (com.nombre || 'Comunidad')).join(', ');
+
+  let responsablesArray2 = [];
+  if (typeof cambio.responsables_display === 'string') {
+    responsablesArray2 = cambio.responsables_display.split(',').map(s => s.trim()).filter(s => s);
+  } else if (Array.isArray(cambio.colaboradores)) {
+    responsablesArray2 = cambio.colaboradores;
+  }
+  const responsablesTexto2 = responsablesArray2.map(col => typeof col === 'string' ? col : (col.nombre || 'Personal')).join(', ');
+  
+  const d2 = new Date(cambio.fecha_cambio + 'T12:00:00');
+  const dateStr2 = !isNaN(d2.getTime()) ? `${d2.getDate().toString().padStart(2,'0')}/${(d2.getMonth()+1).toString().padStart(2,'0')}/${d2.getFullYear()}` : (cambio.fecha_display || '');
+
+  const changeContext2 = {
+    changeDesc: cambio.descripcion || 'Sin descripción',
+    comunidades: comunidadesTexto2,
+    responsables: responsablesTexto2,
+    date: dateStr2
+  };
+  const ctxBase64_2 = btoa(unescape(encodeURIComponent(JSON.stringify(changeContext2))));
+
   // Cargar evidencias (pasar permisos, pero NO permitir eliminar en modal de detalles - solo lectura)
   // En el modal de detalles NO se pueden eliminar evidencias, solo verlas
 
-  loadEvidences(cambio.evidencias || [], puedeGestionar, false);
+  loadEvidences(cambio.evidencias || [], puedeGestionar, false, ctxBase64_2);
 
   // Guardar el ID del cambio actual para agregar evidencias
 
@@ -12969,9 +12997,10 @@ function loadEvidences(evidences, puedeGestionar = false, permiteEliminar = fals
 
     let mediaHtml = '';
     if(isImage) {
+      const imgDesc = evidence.descripcion || nombreArchivo;
       window.changeDetailsPhotos.push({
         url: evidence.url,
-        desc: nombreArchivo,
+        desc: imgDesc,
         ctxBase64: ctxBase64
       });
       const photoIndex = window.changeDetailsPhotos.length - 1;
@@ -14079,7 +14108,7 @@ function renderProgressStats(cambios) {
       persCounts[colName] = (persCounts[colName] || 0) + 1;
     });
   });
-  const topPers = Object.entries(persCounts).sort((a,b) => b[1] - a[1]).slice(0, 3);
+  const topPers = Object.entries(persCounts).sort((a,b) => b[1] - a[1]);
 
   let html = `
     <!-- Tarjeta Totales -->
