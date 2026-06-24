@@ -14028,20 +14028,8 @@ function renderProgressTimeline(cambios, sortOrder = 'asc') {
       }
     }
 
-    let responsablesArray = [];
-    if (typeof cambio.responsables_display === 'string') {
-      responsablesArray = cambio.responsables_display.split(',').map(s => s.trim()).filter(s => s);
-    } else if (Array.isArray(cambio.colaboradores)) {
-      responsablesArray = cambio.colaboradores;
-    }
-
-    if(responsablesArray.length > 0) {
-      responsablesArray.forEach(col => {
-        const colName = typeof col === 'string' ? col : (col.nombre || 'Personal');
-        metaHtml += `<span class="timeline-chip"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg> ${colName}</span>`;
-      });
-    }
     metaHtml += '</div>';
+
 
     html += `
       <div class="timeline-item">
