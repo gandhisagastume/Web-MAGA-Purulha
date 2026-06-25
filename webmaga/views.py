@@ -7101,15 +7101,13 @@ def api_ultimos_eventos_inicio(request):
                         imagen_url = primera_evidencia.url_almacenamiento
 
                 try:
-                    if evento.fecha:
+                    ts = evento.actualizado_en or evento.creado_en
+                    if ts:
+                        if not is_aware(ts):
+                            ts = make_aware(ts, pytz.UTC)
+                        fecha_obj = localtime(ts).date()
+                    elif evento.fecha:
                         fecha_obj = evento.fecha
-                    elif evento.creado_en:
-                        if not is_aware(evento.creado_en):
-                            creado_aware = make_aware(evento.creado_en, pytz.UTC)
-                        else:
-                            creado_aware = evento.creado_en
-                        fecha_local = localtime(creado_aware)
-                        fecha_obj = fecha_local.date()
                     else:
                         fecha_obj = None
                 except Exception:
@@ -7246,14 +7244,17 @@ def api_avances(request):
     """Obtiene avances/cambios de eventos para el calendario por fecha. Consulta la tabla eventos_cambios_colaboradores.
     Agrupa por grupo_id para evitar duplicados cuando hay múltiples colaboradores responsables."""
     date_str = request.GET.get('date')
-    if not date_str:
+    start_str = request.GET.get('start')
+    end_str = request.GET.get('end')
+    use_range = bool(start_str and end_str)
+    if not date_str and not use_range:
         return JsonResponse([], safe=False)
-    
+
     try:
         from django.utils.timezone import localtime, is_aware, make_aware
         import pytz
         from django.db import connection
-        
+
         # Obtener información del usuario actual
         is_admin = False
         colaborador_usuario_id = None
@@ -7265,10 +7266,17 @@ def api_avances(request):
                     colaborador_usuario_id = str(usuario_maga.colaborador.id)
         except Exception:
             pass
-        
+
+        if use_range:
+            date_condition = "(ecc.fecha_cambio AT TIME ZONE 'America/Guatemala')::date BETWEEN %s::date AND %s::date"
+            date_params = [start_str, end_str]
+        else:
+            date_condition = "(ecc.fecha_cambio AT TIME ZONE 'America/Guatemala')::date = %s::date"
+            date_params = [date_str]
+
         # Construir la consulta base agrupando por grupo_id para evitar duplicados
         # Agrupamos por grupo_id y concatenamos todos los colaboradores del mismo grupo
-        query_base = """
+        query_base = f"""
             SELECT ecc.grupo_id::text,
                    ecc.actividad_id::text,
                    ecc.descripcion_cambio,
@@ -7282,10 +7290,10 @@ def api_avances(request):
             LEFT JOIN colaboradores c ON c.id = ecc.colaborador_id
             LEFT JOIN comunidades com ON com.id = a.comunidad_id
             LEFT JOIN regiones r ON r.id = com.region_id
-            WHERE (ecc.fecha_cambio AT TIME ZONE 'America/Guatemala')::date = %s::date
+            WHERE {date_condition}
               AND a.eliminado_en IS NULL
         """
-        
+
         # Si no es admin, filtrar por actividades donde el colaborador del usuario está asignado
         if not is_admin and colaborador_usuario_id:
             query_base += """
@@ -7295,9 +7303,9 @@ def api_avances(request):
                   WHERE ap.colaborador_id = %s
               )
             """
-            params = [date_str, colaborador_usuario_id]
+            params = date_params + [colaborador_usuario_id]
         else:
-            params = [date_str]
+            params = date_params
         
         query_base += """
             GROUP BY ecc.grupo_id, ecc.actividad_id, ecc.descripcion_cambio, a.nombre
@@ -7358,9 +7366,19 @@ def api_reminders(request):
     """Lista o crea recordatorios usando tablas recordatorios y recordatorio_colaboradores."""
     if request.method == 'GET':
         date_str = request.GET.get('date')
-        if not date_str:
+        start_str = request.GET.get('start')
+        end_str = request.GET.get('end')
+        use_range = bool(start_str and end_str)
+        if not date_str and not use_range:
             return JsonResponse([], safe=False)
-        
+
+        if use_range:
+            date_cond = "(r.due_at AT TIME ZONE 'America/Guatemala')::date BETWEEN %s::date AND %s::date"
+            date_params = [start_str, end_str]
+        else:
+            date_cond = "(r.due_at AT TIME ZONE 'America/Guatemala')::date = %s::date"
+            date_params = [date_str]
+
         # Obtener información del usuario actual
         is_admin = False
         user_id = None
@@ -7374,17 +7392,17 @@ def api_reminders(request):
                     colaborador_usuario_id = str(usuario_maga.colaborador.id)
         except Exception:
             pass
-        
+
         try:
             with connection.cursor() as cur:
-                # Si es admin, mostrar todos los recordatorios del día EXCEPTO los personales
+                # Si es admin, mostrar todos los recordatorios del día/rango EXCEPTO los personales
                 # Un recordatorio es personal si:
                 # - El creador es personal (no admin)
                 # - Solo tiene un colaborador asignado
                 # - Ese colaborador pertenece al mismo usuario que creó el recordatorio
                 if is_admin:
                     cur.execute(
-                        """
+                        f"""
                         SELECT r.id::text,
                                r.actividad_id::text,
                                r.created_by::text,
@@ -7396,7 +7414,7 @@ def api_reminders(request):
                                r.enviado
                         FROM recordatorios r
                         LEFT JOIN usuarios u ON u.id = r.created_by
-                        WHERE (r.due_at AT TIME ZONE 'America/Guatemala')::date = %s::date
+                        WHERE {date_cond}
                           AND NOT (
                             -- Excluir recordatorios personales
                             u.rol = 'personal'
@@ -7418,7 +7436,7 @@ def api_reminders(request):
                           )
                         ORDER BY r.due_at ASC
                         """,
-                        [date_str]
+                        date_params
                     )
                 else:
                     # Para usuarios personales: mostrar recordatorios creados por ellos O donde su colaborador está incluido
@@ -7426,7 +7444,7 @@ def api_reminders(request):
                         if colaborador_usuario_id:
                             # Mostrar recordatorios creados por el usuario O donde su colaborador está en recordatorio_colaboradores
                             cur.execute(
-                                """
+                                f"""
                                 SELECT DISTINCT r.id::text,
                                        r.actividad_id::text,
                                        r.created_by::text,
@@ -7439,16 +7457,16 @@ def api_reminders(request):
                                 FROM recordatorios r
                                 LEFT JOIN recordatorio_colaboradores rc ON rc.recordatorio_id = r.id
                                 LEFT JOIN usuarios u ON u.id = r.created_by
-                                WHERE (r.due_at AT TIME ZONE 'America/Guatemala')::date = %s::date
+                                WHERE {date_cond}
                                   AND (r.created_by = %s OR rc.colaborador_id = %s)
                                 ORDER BY r.due_at ASC
                                 """,
-                                [date_str, user_id, colaborador_usuario_id]
+                                date_params + [user_id, colaborador_usuario_id]
                             )
                         else:
                             # Si no tiene colaborador vinculado, solo mostrar los que creó
                             cur.execute(
-                                """
+                                f"""
                                 SELECT r.id::text,
                                        r.actividad_id::text,
                                        r.created_by::text,
@@ -7460,11 +7478,11 @@ def api_reminders(request):
                                        r.enviado
                                 FROM recordatorios r
                                 LEFT JOIN usuarios u ON u.id = r.created_by
-                                WHERE (r.due_at AT TIME ZONE 'America/Guatemala')::date = %s::date
+                                WHERE {date_cond}
                                   AND r.created_by = %s
                                 ORDER BY r.due_at ASC
                                 """,
-                                [date_str, user_id]
+                                date_params + [user_id]
                             )
                     else:
                         # Si no hay user_id, no mostrar nada
@@ -7508,7 +7526,7 @@ def api_reminders(request):
                     date_iso = due_at_guatemala.date().isoformat()
                 else:
                     time_str = ''
-                    date_iso = date_str
+                    date_iso = date_str or ''
                     
                 results.append({
                     'id': rid,

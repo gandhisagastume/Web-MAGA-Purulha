@@ -1512,23 +1512,9 @@
   // Agregar event listeners a paths y grupos
   regionPaths.forEach(path => {
     path.addEventListener('mouseenter', handleRegionHover);
-    path.addEventListener('mousemove', handleRegionHover);
     path.addEventListener('mouseleave', (e)=>{ hideTooltip(); handleRegionLeave(e); });
     path.addEventListener('click', handleRegionClick);
     path.style.cursor = 'pointer';
-  });
-  regionGroups().forEach(g=>{
-    g.addEventListener('mouseenter', (e)=>{
-      const label = g.getAttribute('inkscape:label');
-      const num = parseInt(label.slice(1),10);
-      showTooltip(num, e);
-    });
-    g.addEventListener('mousemove', (e)=>{
-      const label = g.getAttribute('inkscape:label');
-      const num = parseInt(label.slice(1),10);
-      showTooltip(num, e);
-    });
-    g.addEventListener('mouseleave', hideTooltip);
   });
 
   // Función para inicializar el mapa interactivo
@@ -1577,7 +1563,7 @@
   (function() {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('logout') === '1') {
-      console.log('[Logout] Limpiando sesiones residuales...');
+      calendarDebugLog('[Logout] Limpiando sesiones residuales...');
       
       // Limpiar sesión offline del localStorage
       if (window.OfflineAuth && window.OfflineAuth.clearActiveSession) {
@@ -1599,7 +1585,7 @@
         }
         keysToRemove.forEach(key => localStorage.removeItem(key));
       } catch (e) {
-        console.warn('[Logout] Error al limpiar localStorage:', e);
+        calendarDebugWarn('[Logout] Error al limpiar localStorage:', e);
       }
       
       // Limpiar parámetros de la URL para evitar que se ejecute de nuevo
@@ -1636,7 +1622,7 @@
         window.CURRENT_USER = CURRENT_USER;
         calendarDebugLog('✅ Usuario actual cargado:', CURRENT_USER);
       } else {
-        console.warn('⚠️ No se pudo cargar información del usuario');
+        calendarDebugWarn('⚠️ No se pudo cargar información del usuario');
       }
     } catch (e) {
       console.error('❌ Error al cargar usuario:', e);
@@ -2268,7 +2254,7 @@
         return ev.date !== null && ev.date !== undefined;
       });
     }catch(e){
-      console.warn('No se pudieron cargar eventos del calendario:', e);
+      calendarDebugWarn('No se pudieron cargar eventos del calendario:', e);
       return [];
     }
   }
@@ -2298,16 +2284,14 @@
     const firstWeekday = (first.getDay() + 6) % 7; // lunes=0
     const daysInMonth = last.getDate();
 
-    const events = await fetchMonthEvents(year, month);
-    const byDate = groupByDate(events);
-    
-    // Cargar recordatorios del mes
     const monthStart = fmtISO(new Date(year, month, 1));
     const monthEnd = fmtISO(new Date(year, month+1, 0));
-    const remindersByDate = await fetchMonthReminders(monthStart, monthEnd);
-    
-    // Cargar avances del mes
-    const avancesByDate = await fetchMonthAvances(monthStart, monthEnd);
+    const [events, remindersByDate, avancesByDate] = await Promise.all([
+      fetchMonthEvents(year, month),
+      fetchMonthReminders(monthStart, monthEnd),
+      fetchMonthAvances(monthStart, monthEnd),
+    ]);
+    const byDate = groupByDate(events);
 
     for(let i=0;i<firstWeekday;i++){
       const cell = document.createElement('div');
@@ -2452,169 +2436,58 @@
     }
   }
   
-  // Función para cargar recordatorios de un mes (optimizada con llamadas en paralelo)
+  // Función para cargar recordatorios de un mes (1 request con rango start/end)
   async function fetchMonthReminders(startDate, endDate){
     const remindersMap = new Map();
     try{
-      // Parsear fechas de forma segura (formato YYYY-MM-DD)
-      const [startYear, startMonth, startDay] = startDate.split('-').map(Number);
-      const [endYear, endMonth, endDay] = endDate.split('-').map(Number);
-      
-      // Crear objetos Date en hora local para evitar problemas con UTC
-      const start = new Date(startYear, startMonth - 1, startDay);
-      const end = new Date(endYear, endMonth - 1, endDay);
-      
-      // Calcular número de días incluyendo el último día
-      const daysDiff = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
-      
-      // Crear array de promesas para llamadas en paralelo
-      const promises = [];
-      const dateKeys = [];
-      
-      // Iterar día por día usando el mes y año original para evitar problemas
-      for(let i = 0; i < daysDiff; i++){
-        const d = new Date(startYear, startMonth - 1, startDay + i);
-        const dateKey = fmtISO(d);
-        const dateLabel = `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`;
-        dateKeys.push(dateKey);
-        promises.push(
-          fetchDayReminders(dateLabel).catch(e => {
-            console.warn(`Error al cargar recordatorios para ${dateKey}:`, e);
-            return [];
-          })
-        );
-      }
-      
-      // Ejecutar todas las llamadas en paralelo
-      const results = await Promise.all(promises);
-      
-      // Mapear resultados - agrupar por fecha real del recordatorio
-      results.forEach((reminders, index) => {
-        if(reminders && reminders.length > 0){
-          // Para cada recordatorio, usar su fecha real para mapearlo
-          reminders.forEach(r => {
-            if(!r.date) return;
-            // Extraer solo la fecha (sin hora) del recordatorio
-            const reminderDate = r.date.split('T')[0];
-            // Usar la fecha real del recordatorio como clave
-            if(!remindersMap.has(reminderDate)){
-              remindersMap.set(reminderDate, []);
-            }
-            remindersMap.get(reminderDate).push(r);
-            calendarDebugLog(`📍 Recordatorio mapeado: ${r.event_name || 'Sin nombre'} → fecha ${reminderDate}`);
-          });
-        }
+      const res = await fetch(`${REM_API}?start=${startDate}&end=${endDate}`);
+      if(!res.ok) throw new Error(`HTTP ${res.status}`);
+      const reminders = await res.json();
+      reminders.forEach(r => {
+        if(!r.date) return;
+        const reminderDate = r.date.split('T')[0];
+        if(!remindersMap.has(reminderDate)) remindersMap.set(reminderDate, []);
+        remindersMap.get(reminderDate).push(r);
+        calendarDebugLog(`📍 Recordatorio mapeado: ${r.event_name || 'Sin nombre'} → fecha ${reminderDate}`);
       });
-      
       calendarDebugLog(`✅ Recordatorios del mes cargados: ${remindersMap.size} días con recordatorios`);
-      // Log para debugging: mostrar todas las fechas con recordatorios
-      remindersMap.forEach((reminders, dateKey) => {
-        calendarDebugLog(`  📅 ${dateKey}: ${reminders.length} recordatorio(s)`);
-      });
     }catch(e){
-      console.warn('Error al cargar recordatorios del mes:', e);
+      calendarDebugWarn('Error al cargar recordatorios del mes:', e);
     }
     return remindersMap;
   }
   
-  // Función para cargar avances de un mes (optimizada con llamadas en paralelo)
+  // Función para cargar avances de un mes (1 request con rango start/end)
   // IMPORTANTE: SOLO datos de la tabla eventos_cambios_colaboradores
-  // Esta función usa fetchDayAvances que consulta exclusivamente eventos_cambios_colaboradores
   async function fetchMonthAvances(startDate, endDate){
     const avancesMap = new Map();
     try{
-      // Parsear fechas de forma segura (formato YYYY-MM-DD)
-      const [startYear, startMonth, startDay] = startDate.split('-').map(Number);
-      const [endYear, endMonth, endDay] = endDate.split('-').map(Number);
-      
-      // Crear objetos Date en hora local para evitar problemas con UTC
-      const start = new Date(startYear, startMonth - 1, startDay);
-      const end = new Date(endYear, endMonth - 1, endDay);
-      
-      // Calcular número de días incluyendo el último día
-      const daysDiff = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
-      
-      // Crear array de promesas para llamadas en paralelo
-      const promises = [];
-      const dateKeys = [];
-      
-      // Iterar día por día usando el mes y año original para evitar problemas
-      for(let i = 0; i < daysDiff; i++){
-        const d = new Date(startYear, startMonth - 1, startDay + i);
-        const dateKey = fmtISO(d);
-        const dateLabel = `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`;
-        dateKeys.push(dateKey);
-        // fetchDayAvances consulta SOLO eventos_cambios_colaboradores
-        promises.push(
-          fetchDayAvances(dateLabel).catch(e => {
-            console.warn(`Error al cargar avances de eventos_cambios_colaboradores para ${dateKey}:`, e);
-            return [];
-          })
-        );
-      }
-      
-      // Ejecutar todas las llamadas en paralelo
-      const results = await Promise.all(promises);
-      
-      // Mapear resultados - agrupar por fecha real del avance (SOLO de eventos_cambios_colaboradores)
-      // Usar Set para evitar duplicados por ID
+      const res = await fetch(`${AVANCES_API}?start=${startDate}&end=${endDate}`);
+      if(!res.ok) throw new Error(`HTTP ${res.status}`);
+      const avances = await res.json();
       const avancesIdsAgregados = new Set();
-      results.forEach((avances, index) => {
-        if(avances && avances.length > 0){
-          // Para cada avance, validar que sea de eventos_cambios_colaboradores y usar su fecha real
-          avances.forEach(av => {
-            // Validar que tenga ID (requerido para evitar duplicados)
-            if(!av.id) return;
-            
-            // Validar que tenga los campos obligatorios de eventos_cambios_colaboradores
-            // descripcion_cambio es obligatorio en la tabla
-            if(!av.descripcion && !av.descripcion_cambio) return;
-            // fecha_cambio es obligatorio en la tabla
-            if(!av.fecha && !av.fecha_cambio) return;
-            
-            // Evitar duplicados: si ya se agregó este avance, saltarlo
-            if(avancesIdsAgregados.has(av.id)){
-              calendarDebugLog(`⚠️ Avance duplicado omitido (ID: ${av.id}):`, av.evento_nombre || 'Sin nombre');
-              return;
-            }
-            
-            // Extraer solo la fecha (sin hora) del avance
-            const avanceDate = (av.fecha || av.fecha_cambio || '').split('T')[0];
-            if(!avanceDate) return;
-            
-            // Marcar este avance como agregado
-            avancesIdsAgregados.add(av.id);
-            
-            // Usar la fecha real del avance como clave
-            if(!avancesMap.has(avanceDate)){
-              avancesMap.set(avanceDate, []);
-            }
-            
-            // Verificar que el avance no esté ya en el array de esa fecha (evitar duplicados)
-            const avancesDelDia = avancesMap.get(avanceDate);
-            const yaExiste = avancesDelDia.some(a => a.id === av.id);
-            if(!yaExiste){
-            avancesMap.get(avanceDate).push(av);
-              calendarDebugLog(`📍 Avance de eventos_cambios_colaboradores mapeado: ${av.evento_nombre || 'Sin nombre'} → fecha ${avanceDate}`);
-            } else {
-              calendarDebugLog(`⚠️ Avance duplicado omitido en mapeo mensual (ID: ${av.id}):`, av.evento_nombre || 'Sin nombre');
-            }
-          });
+      avances.forEach(av => {
+        if(!av.id) return;
+        if(!av.descripcion && !av.descripcion_cambio) return;
+        if(!av.fecha && !av.fecha_cambio) return;
+        if(avancesIdsAgregados.has(av.id)){
+          calendarDebugLog(`⚠️ Avance duplicado omitido (ID: ${av.id}):`, av.evento_nombre || 'Sin nombre');
+          return;
         }
+        avancesIdsAgregados.add(av.id);
+        const avanceDate = (av.fecha || av.fecha_cambio || '').split('T')[0];
+        if(!avanceDate) return;
+        if(!avancesMap.has(avanceDate)) avancesMap.set(avanceDate, []);
+        avancesMap.get(avanceDate).push(av);
+        calendarDebugLog(`📍 Avance mapeado: ${av.evento_nombre || 'Sin nombre'} → fecha ${avanceDate}`);
       });
-      
-      // Eliminar duplicados finales en cada fecha del mapa
-      avancesMap.forEach((avances, fecha) => {
-        const avancesUnicos = eliminarDuplicadosAvances(avances);
-        if(avancesUnicos.length !== avances.length){
-          calendarDebugLog(`⚠️ Duplicados eliminados para fecha ${fecha}: ${avances.length - avancesUnicos.length} duplicado(s)`);
-          avancesMap.set(fecha, avancesUnicos);
-        }
+      avancesMap.forEach((lista, fecha) => {
+        const unicos = eliminarDuplicadosAvances(lista);
+        if(unicos.length !== lista.length) avancesMap.set(fecha, unicos);
       });
-      
-      calendarDebugLog(`✅ Avances de eventos_cambios_colaboradores del mes cargados: ${avancesMap.size} días con avances`);
+      calendarDebugLog(`✅ Avances del mes cargados: ${avancesMap.size} días con avances`);
     }catch(e){
-      console.warn('Error al cargar avances de eventos_cambios_colaboradores del mes:', e);
+      calendarDebugWarn('Error al cargar avances del mes:', e);
     }
     return avancesMap;
   }
@@ -2658,7 +2531,7 @@
       const res = await fetch(`${AVANCES_API}?date=${dateISO}`);
       
       if(!res.ok){
-        console.warn('⚠️ Error al obtener avances de eventos_cambios_colaboradores:', res.status, res.statusText);
+        calendarDebugWarn('⚠️ Error al obtener avances:', res.status, res.statusText);
         return [];
       }
       
@@ -2792,7 +2665,7 @@
       const res = await fetch(`${REM_API}?date=${dateISO}`);
       
       if(!res.ok){
-        console.warn('⚠️ Error al obtener recordatorios:', res.status, res.statusText);
+        calendarDebugWarn('⚠️ Error al obtener recordatorios:', res.status, res.statusText);
         return [];
       }
       
@@ -2820,14 +2693,14 @@
         
         // Recargar la página para evitar problemas de caché
         // Esto asegura que el recordatorio eliminado no aparezca en caché
-        console.log('[Calendario] Recordatorio eliminado, recargando página para actualizar caché...');
+        calendarDebugLog('[Calendario] Recordatorio eliminado, recargando página para actualizar caché...');
         window.location.reload();
       } else {
-        console.warn('Error al eliminar recordatorio:', res.status);
+        calendarDebugWarn('Error al eliminar recordatorio:', res.status);
         alert('No se pudo eliminar el recordatorio.');
       }
     }catch(e){ 
-      console.warn('Delete reminder failed', e);
+      calendarDebugWarn('Delete reminder failed', e);
       alert('Error al eliminar el recordatorio.');
     }
   }
@@ -2926,7 +2799,7 @@
           }
         }
       }catch(e){
-        console.warn('Error al cargar eventos:', e);
+        calendarDebugWarn('Error al cargar eventos:', e);
       }
     }
     
@@ -3088,7 +2961,7 @@
         ownersChecklist.appendChild(emptyMsg);
       }
     }catch(e){
-      console.warn('Error al cargar colaboradores:', e);
+      calendarDebugWarn('Error al cargar colaboradores:', e);
       const errorMsg = document.createElement('p');
       errorMsg.style.cssText = 'color:#ff5d5d;text-align:center;padding:12px;font-size:0.9rem';
       errorMsg.textContent = 'Error al cargar colaboradores';
@@ -3287,10 +3160,10 @@
         alert('Recordatorio guardado exitosamente');
       } else {
         const t = await res.text();
-        console.warn('Save reminder failed', res.status, t);
+        calendarDebugWarn('Save reminder failed', res.status, t);
         alert('No se pudo guardar el recordatorio. Verifique los datos e intente nuevamente.');
       }
-    }catch(e){ console.warn('Save reminder error', e); alert('Error de red al guardar recordatorio.'); }
+    }catch(e){ calendarDebugWarn('Save reminder error', e); alert('Error de red al guardar recordatorio.'); }
   });
 
   // Resaltado de eventos para el usuario actual
@@ -3371,77 +3244,77 @@
   // Registrar Service Worker con mejor manejo de errores
   function registerServiceWorker() {
     if (!('serviceWorker' in navigator)) {
-      console.warn('[Notificaciones] Service Worker no soportado en este navegador');
+      calendarDebugWarn('[Notificaciones] Service Worker no soportado en este navegador');
       return;
     }
     
     // Verificar que estamos en HTTPS (requerido para Service Workers, excepto localhost)
     if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
-      console.warn('[Notificaciones] Service Worker requiere HTTPS (excepto localhost)');
-      console.warn('[Notificaciones] Protocolo actual:', location.protocol);
+      calendarDebugWarn('[Notificaciones] Service Worker requiere HTTPS (excepto localhost)');
+      calendarDebugWarn('[Notificaciones] Protocolo actual:', location.protocol);
       return;
     }
     
-    console.log('[Notificaciones] Intentando registrar Service Worker...');
-    console.log('[Notificaciones] URL:', '/service-worker.js');
-    console.log('[Notificaciones] Scope:', '/');
-    
+    calendarDebugLog('[Notificaciones] Intentando registrar Service Worker...');
+    calendarDebugLog('[Notificaciones] URL:', '/service-worker.js');
+    calendarDebugLog('[Notificaciones] Scope:', '/');
+
     navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
       .then(registration => {
-        console.log('[Notificaciones] ✅ Service Worker registrado exitosamente');
-        console.log('[Notificaciones] Scope:', registration.scope);
-        console.log('[Notificaciones] Active:', registration.active);
-        console.log('[Notificaciones] Installing:', registration.installing);
-        console.log('[Notificaciones] Waiting:', registration.waiting);
-        
+        calendarDebugLog('[Notificaciones] ✅ Service Worker registrado exitosamente');
+        calendarDebugLog('[Notificaciones] Scope:', registration.scope);
+        calendarDebugLog('[Notificaciones] Active:', registration.active);
+        calendarDebugLog('[Notificaciones] Installing:', registration.installing);
+        calendarDebugLog('[Notificaciones] Waiting:', registration.waiting);
+
         // Verificar estado del Service Worker
         if (registration.active) {
-          console.log('[Notificaciones] ✅ Service Worker está ACTIVO');
+          calendarDebugLog('[Notificaciones] ✅ Service Worker está ACTIVO');
         } else if (registration.installing) {
-          console.log('[Notificaciones] ⏳ Service Worker está INSTALÁNDOSE');
+          calendarDebugLog('[Notificaciones] ⏳ Service Worker está INSTALÁNDOSE');
           registration.installing.addEventListener('statechange', () => {
-            console.log('[Notificaciones] Estado del Service Worker:', registration.installing.state);
+            calendarDebugLog('[Notificaciones] Estado del Service Worker:', registration.installing.state);
             if (registration.installing.state === 'activated') {
-              console.log('[Notificaciones] ✅ Service Worker ACTIVADO');
+              calendarDebugLog('[Notificaciones] ✅ Service Worker ACTIVADO');
             }
           });
         } else if (registration.waiting) {
-          console.log('[Notificaciones] ⏳ Service Worker está ESPERANDO');
+          calendarDebugLog('[Notificaciones] ⏳ Service Worker está ESPERANDO');
         }
-        
+
         // Escuchar actualizaciones
         registration.addEventListener('updatefound', () => {
-          console.log('[Notificaciones] Nueva versión del Service Worker encontrada');
+          calendarDebugLog('[Notificaciones] Nueva versión del Service Worker encontrada');
           const newWorker = registration.installing;
           if (newWorker) {
             newWorker.addEventListener('statechange', () => {
-              console.log('[Notificaciones] Estado del nuevo Service Worker:', newWorker.state);
+              calendarDebugLog('[Notificaciones] Estado del nuevo Service Worker:', newWorker.state);
               if (newWorker.state === 'activated') {
-                console.log('[Notificaciones] ✅ Nuevo Service Worker ACTIVADO');
+                calendarDebugLog('[Notificaciones] ✅ Nuevo Service Worker ACTIVADO');
               }
             });
           }
         });
-        
+
         // Escuchar mensajes del Service Worker
         navigator.serviceWorker.addEventListener('message', (event) => {
-          console.log('[Notificaciones] Mensaje recibido del Service Worker:', event.data);
+          calendarDebugLog('[Notificaciones] Mensaje recibido del Service Worker:', event.data);
           if (event.data && event.data.type === 'CHECK_REMINDERS') {
             checkPendingReminders();
           }
         });
-        
+
         // Verificar estado periódicamente y actualizar si es necesario
         setInterval(() => {
           registration.update().catch(err => {
-            console.warn('[Notificaciones] Error al actualizar Service Worker:', err);
+            calendarDebugWarn('[Notificaciones] Error al actualizar Service Worker:', err);
           });
         }, 60000); // Cada minuto
-        
+
         // Verificar que el Service Worker esté listo
         navigator.serviceWorker.ready.then(reg => {
-          console.log('[Notificaciones] ✅ Service Worker está LISTO');
-          console.log('[Notificaciones] Service Worker activo:', reg.active);
+          calendarDebugLog('[Notificaciones] ✅ Service Worker está LISTO');
+          calendarDebugLog('[Notificaciones] Service Worker activo:', reg.active);
         }).catch(err => {
           console.error('[Notificaciones] Error al verificar Service Worker ready:', err);
         });
@@ -3451,10 +3324,10 @@
         console.error('[Notificaciones] Tipo de error:', error.name);
         console.error('[Notificaciones] Mensaje:', error.message);
         console.error('[Notificaciones] Stack:', error.stack);
-        
+
         // Intentar de nuevo después de 5 segundos
         setTimeout(() => {
-          console.log('[Notificaciones] Reintentando registro del Service Worker...');
+          calendarDebugLog('[Notificaciones] Reintentando registro del Service Worker...');
           registerServiceWorker();
         }, 5000);
       });
@@ -3471,38 +3344,38 @@
   // Solicitar permisos de notificación
   async function requestNotificationPermission() {
     if (!('Notification' in window)) {
-      console.warn('[Notificaciones] Este navegador no soporta notificaciones');
+      calendarDebugWarn('[Notificaciones] Este navegador no soporta notificaciones');
       return false;
     }
     
-    console.log('[Notificaciones] Estado actual de permisos:', Notification.permission);
-    
+    calendarDebugLog('[Notificaciones] Estado actual de permisos:', Notification.permission);
+
     if (Notification.permission === 'granted') {
       notificationPermission = 'granted';
-      console.log('[Notificaciones] Permisos ya otorgados');
+      calendarDebugLog('[Notificaciones] Permisos ya otorgados');
       return true;
     }
-    
+
     if (Notification.permission !== 'denied') {
-      console.log('[Notificaciones] Solicitando permisos...');
+      calendarDebugLog('[Notificaciones] Solicitando permisos...');
       try {
         const permission = await Notification.requestPermission();
         notificationPermission = permission;
-        console.log('[Notificaciones] Respuesta del usuario:', permission);
-        
+        calendarDebugLog('[Notificaciones] Respuesta del usuario:', permission);
+
         if (permission === 'granted') {
-          console.log('[Notificaciones] ✅ Permisos otorgados');
+          calendarDebugLog('[Notificaciones] ✅ Permisos otorgados');
           // Mostrar un mensaje de confirmación
           if (document.visibilityState === 'visible') {
             showInPageNotification('✅ Notificaciones activadas', 'Ahora recibirás recordatorios en tu dispositivo', 'permission-granted');
           }
         } else if (permission === 'denied') {
-          console.warn('[Notificaciones] ❌ Permisos denegados por el usuario');
+          calendarDebugWarn('[Notificaciones] ❌ Permisos denegados por el usuario');
           if (document.visibilityState === 'visible') {
             alert('Las notificaciones fueron denegadas. Para recibir recordatorios, por favor permite las notificaciones en la configuración de tu navegador.');
           }
         } else {
-          console.log('[Notificaciones] ⏸️ Permisos en estado "default" (usuario no ha respondido)');
+          calendarDebugLog('[Notificaciones] ⏸️ Permisos en estado "default" (usuario no ha respondido)');
         }
         
         return permission === 'granted';
@@ -3511,7 +3384,7 @@
         return false;
       }
     } else {
-      console.warn('[Notificaciones] Permisos previamente denegados');
+      calendarDebugWarn('[Notificaciones] Permisos previamente denegados');
       return false;
     }
   }
@@ -3519,13 +3392,13 @@
   // Verificar recordatorios pendientes
   async function checkPendingReminders() {
     if (!isUserAuthenticated || !CURRENT_USER) {
-      console.log('[Notificaciones] Usuario no autenticado o no cargado, saltando verificación');
+      calendarDebugLog('[Notificaciones] Usuario no autenticado o no cargado, saltando verificación');
       return;
     }
     
     try {
       const PENDING_API = (window.DJANGO_URLS && window.DJANGO_URLS.remindersPending) || '/api/reminders/pending/';
-      console.log('[Notificaciones] Consultando API:', PENDING_API);
+      calendarDebugLog('[Notificaciones] Consultando API:', PENDING_API);
       
       const res = await fetch(PENDING_API, {
         credentials: 'same-origin',
@@ -3535,24 +3408,24 @@
       });
       
       if (!res.ok) {
-        console.warn('[Notificaciones] Error en respuesta:', res.status, res.statusText);
+        calendarDebugWarn('[Notificaciones] Error en respuesta:', res.status, res.statusText);
         return;
       }
       
       const reminders = await res.json();
-      console.log('[Notificaciones] Recordatorios recibidos:', reminders);
+      calendarDebugLog('[Notificaciones] Recordatorios recibidos:', reminders);
       
       if (!Array.isArray(reminders)) {
-        console.warn('[Notificaciones] Respuesta no es un array:', reminders);
+        calendarDebugWarn('[Notificaciones] Respuesta no es un array:', reminders);
         return;
       }
       
       if (reminders.length === 0) {
-        console.log('[Notificaciones] No hay recordatorios pendientes');
+        calendarDebugLog('[Notificaciones] No hay recordatorios pendientes');
         return;
       }
       
-      console.log(`[Notificaciones] Procesando ${reminders.length} recordatorio(s) pendiente(s)`);
+      calendarDebugLog(`[Notificaciones] Procesando ${reminders.length} recordatorio(s) pendiente(s)`);
       
       const now = Date.now();
       
@@ -3563,12 +3436,12 @@
         const recordar = reminder.recordar || false;
         const yaEnviado = reminder.enviado || false;
         
-        console.log('[Notificaciones] Procesando recordatorio:', { reminderId, dueAt, tiempoRestante, recordar, yaEnviado });
+        calendarDebugLog('[Notificaciones] Procesando recordatorio:', { reminderId, dueAt, tiempoRestante, recordar, yaEnviado });
         
         // Si ya fue enviado y NO está marcado "recordar", saltarlo completamente
         // Si está marcado "recordar", aún podemos enviar el reenvío si corresponde
         if (yaEnviado && !recordar) {
-          console.log('[Notificaciones] Recordatorio ya enviado y sin "recordar", saltando:', reminderId);
+          calendarDebugLog('[Notificaciones] Recordatorio ya enviado y sin "recordar", saltando:', reminderId);
           return;
         }
         
@@ -3587,7 +3460,7 @@
           // Verificar si pasaron más de 15 minutos
           const tiempoAbsoluto = Math.abs(tiempoRestante);
           if (tiempoAbsoluto > LIMITE_SEGUNDOS) {
-            console.log('[Notificaciones] Recordatorio expiró hace más de 15 minutos, saltando:', reminderId, `(${Math.round(tiempoAbsoluto / 60)} minutos)`);
+            calendarDebugLog('[Notificaciones] Recordatorio expiró hace más de 15 minutos, saltando:', reminderId, `(${Math.round(tiempoAbsoluto / 60)} minutos)`);
             return; // No enviar notificación si pasaron más de 15 minutos
           }
           
@@ -3601,7 +3474,7 @@
           // Caso 1: Ya pasaron más de 10 minutos pero menos de 15
           // Si está marcado "recordar", enviar SOLO el reenvío (no la principal)
           if (minutosDesdeDueAt >= MINUTOS_REENVIO && recordar && !yaReenviado) {
-            console.log('[Notificaciones] Ya pasaron más de 10 minutos, enviando solo reenvío:', reminderId);
+            calendarDebugLog('[Notificaciones] Ya pasaron más de 10 minutos, enviando solo reenvío:', reminderId);
             sendNotification(reminder, true, false); // Reenvío, no marcar como enviado
             
             // Marcar como reenviado y como enviado (para evitar duplicados)
@@ -3623,7 +3496,7 @@
           
           // Caso 2: Pasaron menos de 10 minutos - enviar notificación principal
           if (minutosDesdeDueAt < MINUTOS_REENVIO && !yaEnviadoPrincipal) {
-            console.log('[Notificaciones] Enviando notificación principal (pasaron menos de 10 minutos):', reminderId);
+            calendarDebugLog('[Notificaciones] Enviando notificación principal (pasaron menos de 10 minutos):', reminderId);
             sendNotification(reminder, false, true); // Principal, marcar como enviado
             
             // Marcar como enviado
@@ -3648,10 +3521,10 @@
               // Verificar que el reenvío no exceda los 15 minutos
               const tiempoTotalHastaReenvio = minutosDesdeDueAt + minutosRestantes;
               if (tiempoTotalHastaReenvio <= LIMITE_MINUTOS) {
-                console.log('[Notificaciones] Programando reenvío en', minutosRestantes, 'minutos');
+                calendarDebugLog('[Notificaciones] Programando reenvío en', minutosRestantes, 'minutos');
                 scheduleNotification(reminder, reenvioTime, true);
               } else {
-                console.log('[Notificaciones] Reenvío no programado: excedería los 15 minutos');
+                calendarDebugLog('[Notificaciones] Reenvío no programado: excedería los 15 minutos');
               }
             }
           }
@@ -3659,28 +3532,28 @@
           else if (yaEnviadoPrincipal && !yaReenviado && recordar) {
             if (minutosDesdeDueAt >= MINUTOS_REENVIO) {
               // Ya pasaron 10 minutos, enviar reenvío inmediatamente
-              console.log('[Notificaciones] Enviando reenvío (ya pasaron 10 minutos desde la hora):', reminderId);
+              calendarDebugLog('[Notificaciones] Enviando reenvío (ya pasaron 10 minutos desde la hora):', reminderId);
               sendNotification(reminder, true, false); // Reenvío
               scheduled.reenviado = true;
             } else {
               // Aún no pasan 10 minutos, programar el reenvío
               const minutosRestantes = MINUTOS_REENVIO - minutosDesdeDueAt;
               const reenvioTime = now + (minutosRestantes * 60 * 1000);
-              
+
               // Verificar que el reenvío no exceda los 15 minutos
               const tiempoTotalHastaReenvio = minutosDesdeDueAt + minutosRestantes;
               if (tiempoTotalHastaReenvio <= LIMITE_MINUTOS) {
-                console.log('[Notificaciones] Programando reenvío en', minutosRestantes, 'minutos');
+                calendarDebugLog('[Notificaciones] Programando reenvío en', minutosRestantes, 'minutos');
                 scheduleNotification(reminder, reenvioTime, true);
               } else {
-                console.log('[Notificaciones] El reenvío excedería los 15 minutos, cancelando:', reminderId);
+                calendarDebugLog('[Notificaciones] El reenvío excedería los 15 minutos, cancelando:', reminderId);
                 scheduled.reenviado = true;
               }
             }
           }
           // Caso 4: No está marcado "recordar" y ya pasó el recordatorio - solo enviar principal una vez
           else if (!recordar && !yaEnviadoPrincipal) {
-            console.log('[Notificaciones] Enviando notificación principal (sin recordar):', reminderId);
+            calendarDebugLog('[Notificaciones] Enviando notificación principal (sin recordar):', reminderId);
             sendNotification(reminder, false, true); // Principal, marcar como enviado
             
             // Marcar como enviado
@@ -3722,7 +3595,7 @@
                       updated.reenviado = true;
                     }
                   } else {
-                    console.log('[Notificaciones] Reenvío cancelado: excedió los 15 minutos desde la hora del recordatorio');
+                    calendarDebugLog('[Notificaciones] Reenvío cancelado: excedió los 15 minutos desde la hora del recordatorio');
                     const updated = scheduledNotifications.get(reminderId);
                     if (updated) {
                       updated.reenviado = true;
@@ -3743,7 +3616,7 @@
                   scheduled.reenvioTimeoutId = reenvioTimeoutId;
                 }
               } else {
-                console.log('[Notificaciones] Reenvío no programado: excedería los 15 minutos desde la hora del recordatorio');
+                calendarDebugLog('[Notificaciones] Reenvío no programado: excedería los 15 minutos desde la hora del recordatorio');
               }
             }
           }
@@ -3766,11 +3639,11 @@
     // Calcular tiempo desde la hora del recordatorio
     const tiempoDesdeDueAt = Math.abs((reminder.due_at_timestamp - now) / 1000);
     
-    console.log('[Notificaciones] Programando notificación:', { 
-      reminderId: reminder.id, 
-      timestamp, 
-      now, 
-      delay, 
+    calendarDebugLog('[Notificaciones] Programando notificación:', {
+      reminderId: reminder.id,
+      timestamp,
+      now,
+      delay,
       isReenviar,
       delaySegundos: Math.round(delay / 1000),
       tiempoDesdeDueAtSegundos: Math.round(tiempoDesdeDueAt)
@@ -3779,12 +3652,12 @@
     // Si el recordatorio ya pasó, verificar que no exceda los 15 minutos
     if (delay <= 0) {
       if (tiempoDesdeDueAt > LIMITE_SEGUNDOS) {
-        console.log('[Notificaciones] Recordatorio expiró hace más de 15 minutos, cancelando notificación:', reminder.id);
+        calendarDebugLog('[Notificaciones] Recordatorio expiró hace más de 15 minutos, cancelando notificación:', reminder.id);
         return;
       }
       
       // Ya pasó pero está dentro del límite, enviar inmediatamente
-      console.log('[Notificaciones] El recordatorio ya pasó, enviando notificación inmediatamente');
+      calendarDebugLog('[Notificaciones] El recordatorio ya pasó, enviando notificación inmediatamente');
       // Solo marcar como enviado si no es reenvío
       sendNotification(reminder, isReenviar, !isReenviar);
       
@@ -3815,11 +3688,11 @@
       // Verificar nuevamente antes de enviar que no hayan pasado más de 15 minutos
       const tiempoActual = Math.abs((reminder.due_at_timestamp - Date.now()) / 1000);
       if (tiempoActual > LIMITE_SEGUNDOS) {
-        console.log('[Notificaciones] Timeout cancelado: excedió los 15 minutos desde la hora del recordatorio:', reminderId);
+        calendarDebugLog('[Notificaciones] Timeout cancelado: excedió los 15 minutos desde la hora del recordatorio:', reminderId);
         return;
       }
       
-      console.log('[Notificaciones] Timeout ejecutado, enviando notificación:', { reminderId, isReenviar });
+      calendarDebugLog('[Notificaciones] Timeout ejecutado, enviando notificación:', { reminderId, isReenviar });
       // Solo marcar como enviado si no es reenvío
       sendNotification(reminder, isReenviar, !isReenviar);
       
@@ -3834,7 +3707,7 @@
       }
     }, delay);
     
-    console.log('[Notificaciones] Timeout programado:', { reminderId, timeoutId, delaySegundos: Math.round(delay / 1000) });
+    calendarDebugLog('[Notificaciones] Timeout programado:', { reminderId, timeoutId, delaySegundos: Math.round(delay / 1000) });
     
     // Guardar el timeout
     if (!scheduledNotifications.has(reminderId)) {
@@ -3898,7 +3771,7 @@
         const hora = dueDate.toLocaleTimeString('es-GT', { hour: '2-digit', minute: '2-digit' });
         bodyParts.push(`🕐 ${fecha} a las ${hora}`);
       } catch (e) {
-        console.warn('[Notificaciones] Error al formatear fecha:', e);
+        calendarDebugWarn('[Notificaciones] Error al formatear fecha:', e);
       }
     }
     
@@ -3910,7 +3783,7 @@
     const body = bodyParts.join('\n') || 'Tienes un recordatorio';
     const tag = `reminder-${reminder.id}${isReenviar ? '-reenviar' : ''}`;
     
-    console.log('[Notificaciones] Mostrando notificación:', { title, body, tag, reminderId: reminder.id, reminder });
+    calendarDebugLog('[Notificaciones] Mostrando notificación:', { title, body, tag, reminderId: reminder.id, reminder });
     
     // Detectar si es Android
     const isAndroid = /Android/i.test(navigator.userAgent);
@@ -3923,11 +3796,11 @@
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.ready
         .then(registration => {
-          console.log('[Notificaciones] Service Worker ready, registration:', registration);
-          console.log('[Notificaciones] Service Worker active:', registration.active);
-          
+          calendarDebugLog('[Notificaciones] Service Worker ready, registration:', registration);
+          calendarDebugLog('[Notificaciones] Service Worker active:', registration.active);
+
           if (registration.active) {
-            console.log('[Notificaciones] Intentando mostrar notificación desde Service Worker...');
+            calendarDebugLog('[Notificaciones] Intentando mostrar notificación desde Service Worker...');
             
             // PRIMERO: Mostrar notificación desde el Service Worker (funciona en Android y Windows)
             return registration.showNotification(title, {
@@ -3944,7 +3817,7 @@
               },
               timestamp: Date.now()
             }).then(() => {
-              console.log('[Notificaciones] ✅ Notificación mostrada desde Service Worker');
+              calendarDebugLog('[Notificaciones] ✅ Notificación mostrada desde Service Worker');
               notificationShown = true;
               
               // Marcar como enviado en el backend si es necesario (solo para notificaciones principales, no reenvíos)
@@ -3953,7 +3826,7 @@
               }
             });
           } else {
-            console.warn('[Notificaciones] Service Worker no está activo, usando fallback');
+            calendarDebugWarn('[Notificaciones] Service Worker no está activo, usando fallback');
             throw new Error('Service Worker no está activo');
           }
         })
@@ -3963,7 +3836,7 @@
           
           // Fallback: usar new Notification() si el Service Worker falla
           if (!notificationShown && 'Notification' in window && Notification.permission === 'granted') {
-            console.log('[Notificaciones] Usando fallback: new Notification()');
+            calendarDebugLog('[Notificaciones] Usando fallback: new Notification()');
             try {
               const notification = new Notification(title, {
                 body: body,
@@ -3979,7 +3852,7 @@
               });
               
               notification.onshow = () => {
-                console.log('[Notificaciones] ✅ Notificación fallback mostrada');
+                calendarDebugLog('[Notificaciones] ✅ Notificación fallback mostrada');
                 notificationShown = true;
                 if (marcarComoEnviado && !isReenviar) {
                   marcarNotificacionComoEnviada(reminder.id);
@@ -4013,13 +3886,13 @@
               isReenviar: isReenviar
             }
           });
-          console.log('[Notificaciones] Mensaje enviado al Service Worker');
+          calendarDebugLog('[Notificaciones] Mensaje enviado al Service Worker');
         }
       }).catch(err => {
-        console.warn('[Notificaciones] No se pudo enviar mensaje al Service Worker:', err);
+        calendarDebugWarn('[Notificaciones] No se pudo enviar mensaje al Service Worker:', err);
       });
     } else {
-      console.warn('[Notificaciones] Service Worker no disponible en este navegador');
+      calendarDebugWarn('[Notificaciones] Service Worker no disponible en este navegador');
       
       // Si no hay Service Worker, usar new Notification() como último recurso
       if ('Notification' in window) {
@@ -4039,7 +3912,7 @@
             });
             
             notification.onshow = () => {
-              console.log('[Notificaciones] ✅ Notificación mostrada (sin Service Worker)');
+              calendarDebugLog('[Notificaciones] ✅ Notificación mostrada (sin Service Worker)');
               if (marcarComoEnviado && !isReenviar) {
                 marcarNotificacionComoEnviada(reminder.id);
               }
@@ -4152,9 +4025,9 @@
       });
       
       if (res.ok) {
-        console.log('[Notificaciones] ✅ Notificación marcada como enviada:', reminderId);
+        calendarDebugLog('[Notificaciones] ✅ Notificación marcada como enviada:', reminderId);
       } else {
-        console.warn('[Notificaciones] ⚠️ No se pudo marcar como enviada:', reminderId);
+        calendarDebugWarn('[Notificaciones] ⚠️ No se pudo marcar como enviada:', reminderId);
       }
     } catch (error) {
       console.error('[Notificaciones] ❌ Error al marcar como enviada:', error);
@@ -4165,7 +4038,7 @@
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.addEventListener('message', (event) => {
       if (event.data && event.data.type === 'CHECK_REMINDERS_BACKGROUND') {
-        console.log('[Notificaciones] Verificación solicitada por Service Worker');
+        calendarDebugLog('[Notificaciones] Verificación solicitada por Service Worker');
         checkPendingReminders();
       }
     });
@@ -4173,33 +4046,33 @@
   
   // Inicializar sistema de notificaciones cuando el usuario esté autenticado
   async function initNotificationSystem() {
-    console.log('[Notificaciones] Inicializando sistema...', { isUserAuthenticated, CURRENT_USER });
-    
+    calendarDebugLog('[Notificaciones] Inicializando sistema...', { isUserAuthenticated, CURRENT_USER });
+
     if (!isUserAuthenticated) {
-      console.log('[Notificaciones] Usuario no autenticado, cancelando inicialización');
+      calendarDebugLog('[Notificaciones] Usuario no autenticado, cancelando inicialización');
       return;
     }
-    
+
     // Cargar usuario si no está cargado
     if (!CURRENT_USER) {
-      console.log('[Notificaciones] Cargando usuario...');
+      calendarDebugLog('[Notificaciones] Cargando usuario...');
       await loadCurrentUser();
     }
-    
+
     if (!CURRENT_USER) {
-      console.warn('[Notificaciones] No se pudo cargar el usuario');
+      calendarDebugWarn('[Notificaciones] No se pudo cargar el usuario');
       return;
     }
-    
-    console.log('[Notificaciones] Usuario cargado:', CURRENT_USER);
-    
+
+    calendarDebugLog('[Notificaciones] Usuario cargado:', CURRENT_USER);
+
     // Solicitar permisos inmediatamente
-    console.log('[Notificaciones] Solicitando permisos...');
+    calendarDebugLog('[Notificaciones] Solicitando permisos...');
     const hasPermission = await requestNotificationPermission();
-    console.log('[Notificaciones] Permiso obtenido:', hasPermission, Notification.permission);
-    
+    calendarDebugLog('[Notificaciones] Permiso obtenido:', hasPermission, Notification.permission);
+
     // Verificar recordatorios inmediatamente
-    console.log('[Notificaciones] Verificando recordatorios pendientes...');
+    calendarDebugLog('[Notificaciones] Verificando recordatorios pendientes...');
     await checkPendingReminders();
     
     // Verificar cada 30 segundos (más frecuente para mejor respuesta, especialmente en Android)
@@ -4210,29 +4083,29 @@
       // Solo verificar si la página está visible o si el Service Worker no está disponible
       // Si el Service Worker está disponible, él se encargará de verificar incluso cuando la página está en segundo plano
       if (document.visibilityState === 'visible' || !('serviceWorker' in navigator)) {
-        console.log('[Notificaciones] Verificación periódica de recordatorios...');
+        calendarDebugLog('[Notificaciones] Verificación periódica de recordatorios...');
         await checkPendingReminders();
       } else {
-        console.log('[Notificaciones] Página en segundo plano, Service Worker se encargará de las notificaciones');
+        calendarDebugLog('[Notificaciones] Página en segundo plano, Service Worker se encargará de las notificaciones');
       }
     }, 30000); // Cada 30 segundos
-    
+
     // También verificar cuando la página se vuelve visible (importante para Android)
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible') {
-        console.log('[Notificaciones] Página visible, verificando recordatorios...');
+        calendarDebugLog('[Notificaciones] Página visible, verificando recordatorios...');
         checkPendingReminders();
       } else {
-        console.log('[Notificaciones] Página en segundo plano, Service Worker continuará verificando');
+        calendarDebugLog('[Notificaciones] Página en segundo plano, Service Worker continuará verificando');
       }
     });
-    
+
     // Verificar cuando la página se enfoca (útil cuando se cambia de pestaña)
     window.addEventListener('focus', () => {
-      console.log('[Notificaciones] Ventana enfocada, verificando recordatorios...');
+      calendarDebugLog('[Notificaciones] Ventana enfocada, verificando recordatorios...');
       checkPendingReminders();
     });
-    
+
     // Escuchar mensajes del Service Worker (si está disponible)
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.ready.then(registration => {
@@ -4240,7 +4113,7 @@
           registration.active.postMessage({ type: 'CHECK_REMINDERS' });
         }
       }).catch(err => {
-        console.warn('[Notificaciones] Service Worker no disponible (puede ser modo incógnito):', err);
+        calendarDebugWarn('[Notificaciones] Service Worker no disponible (puede ser modo incógnito):', err);
       });
     }
   }
