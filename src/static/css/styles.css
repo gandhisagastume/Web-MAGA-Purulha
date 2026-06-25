@@ -223,7 +223,7 @@ body.modal-open .drawer {
   display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:14px;position:relative;
 }
 .brand{display:flex;align-items:center;gap:14px}
-.brand__maga{height:72px; width:auto; display:block; filter:drop-shadow(0 2px 4px rgba(0,0,0,.35))}
+.brand__maga{height:72px; width:auto; display:block; filter:drop-shadow(0 2px 4px rgba(0,0,0,.35)); transform:scale(1.2); transform-origin:left center;}
 .brand__purulha-mobile{display:none; height:72px; width:auto; filter:drop-shadow(0 2px 4px rgba(0,0,0,.35))}
 
 .headline{text-align:center;line-height:1.15}
